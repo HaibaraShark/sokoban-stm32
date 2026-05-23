@@ -23,15 +23,25 @@
 #define GPIOF_IDR_Addr    (GPIOF_BASE+8)
 #define GPIOG_IDR_Addr    (GPIOG_BASE+8)
 
+#ifndef PAout
 #define PAout(n)   BIT_ADDR(GPIOA_ODR_Addr,n)
+#endif
 #define PAin(n)    BIT_ADDR(GPIOA_IDR_Addr,n)
+#ifndef PBout
 #define PBout(n)   BIT_ADDR(GPIOB_ODR_Addr,n)
+#endif
 #define PBin(n)    BIT_ADDR(GPIOB_IDR_Addr,n)
+#ifndef PCout
 #define PCout(n)   BIT_ADDR(GPIOC_ODR_Addr,n)
+#endif
 #define PCin(n)    BIT_ADDR(GPIOC_IDR_Addr,n)
+#ifndef PDout
 #define PDout(n)   BIT_ADDR(GPIOD_ODR_Addr,n)
+#endif
 #define PDin(n)    BIT_ADDR(GPIOD_IDR_Addr,n)
+#ifndef PEout
 #define PEout(n)   BIT_ADDR(GPIOE_ODR_Addr,n)
+#endif
 #define PEin(n)    BIT_ADDR(GPIOE_IDR_Addr,n)
 #define PFout(n)   BIT_ADDR(GPIOF_ODR_Addr,n)
 #define PFin(n)    BIT_ADDR(GPIOF_IDR_Addr,n)
