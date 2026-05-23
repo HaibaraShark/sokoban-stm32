@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>TFT屏（ILI9341）显示实验</TargetName>
+      <TargetName>推箱子(Sokoban)游戏</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -47,7 +47,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Obj\</OutputDirectory>
-          <OutputName>TFTLCD9341</OutputName>
+          <OutputName>Sokoban</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -369,7 +369,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER, STM32F10X_CL</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Libraries\CMSIS\CoreSupport;..\Libraries\CMSIS\DeviceSupport;..\Libraries\CMSIS\DeviceSupport\Startup;..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\inc;..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src;..\User\Main;..\User\Delay;..\User\Led;..\User\Lcd</IncludePath>
+              <IncludePath>..\Libraries\CMSIS\CoreSupport;..\Libraries\CMSIS\DeviceSupport;..\Libraries\CMSIS\DeviceSupport\Startup;..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\inc;..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src;..\User\Main;..\User\Delay;..\User\Led;..\User\Lcd;..\User\Game;..\User\Game\app;..\User\Game\logic;..\User\Game\render;..\User\Game\drv;..\User\Game\data</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -467,6 +467,21 @@
               <FileType>1</FileType>
               <FilePath>..\Libraries\STM32F10x_StdPeriph_Driver_v3.5\src\stm32f10x_exti.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f10x_bkp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src\stm32f10x_bkp.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_fsmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src\stm32f10x_fsmc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f10x_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src\stm32f10x_tim.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -497,6 +512,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\Lcd\lcd.c</FilePath>
             </File>
+            <File>
+              <FileName>NUAA107_32_Driver_IO16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Lcd\NUAA107_32_Driver_IO16.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -516,6 +536,101 @@
               <FileName>information.txt</FileName>
               <FileType>5</FileType>
               <FilePath>..\Doc\information.txt</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Game/App</GroupName>
+          <Files>
+            <File>
+              <FileName>app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\app\app.c</FilePath>
+            </File>
+            <File>
+              <FileName>menu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\app\menu.c</FilePath>
+            </File>
+            <File>
+              <FileName>game.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\app\game.c</FilePath>
+            </File>
+            <File>
+              <FileName>select.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\app\select.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Game/Logic</GroupName>
+          <Files>
+            <File>
+              <FileName>map.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\logic\map.c</FilePath>
+            </File>
+            <File>
+              <FileName>move.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\logic\move.c</FilePath>
+            </File>
+            <File>
+              <FileName>undo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\logic\undo.c</FilePath>
+            </File>
+            <File>
+              <FileName>score.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\logic\score.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Game/Render</GroupName>
+          <Files>
+            <File>
+              <FileName>tile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\render\tile.c</FilePath>
+            </File>
+            <File>
+              <FileName>font.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\render\font.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\render\ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>anim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\render\anim.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Game/Drv</GroupName>
+          <Files>
+            <File>
+              <FileName>audio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\drv\audio.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Game/Data</GroupName>
+          <Files>
+            <File>
+              <FileName>levels.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\data\levels.c</FilePath>
             </File>
           </Files>
         </Group>
