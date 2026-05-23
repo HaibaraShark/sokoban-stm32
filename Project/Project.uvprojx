@@ -177,7 +177,7 @@
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3>"" ()</Flash3>
+          <Flash3>ARM::CMSIS\Flash\STM32F10x_CL.FLM ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -482,6 +482,11 @@
               <FileType>1</FileType>
               <FilePath>..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src\stm32f10x_tim.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f10x_pwr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Libraries\STM32F10x_StdPeriph_Driver_V3.5\src\stm32f10x_pwr.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -511,11 +516,6 @@
               <FileName>lcd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\Lcd\lcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>NUAA107_32_Driver_IO16.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\Lcd\NUAA107_32_Driver_IO16.c</FilePath>
             </File>
           </Files>
         </Group>

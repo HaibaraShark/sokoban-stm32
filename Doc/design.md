@@ -1,7 +1,7 @@
 # 推箱子(Sokoban) 详细设计文档
 
 > **平台**: MDV-STM32-F107 (NUAA_CM3_107) | **MCU**: STM32F107VCT6  
-> **LCD**: ILI9341 3.2" TFT 320×240 横屏 | **IDE**: Keil MDK-ARM V5  
+> **LCD**: ILI9341 3.2" TFT 320×240 横屏 | **IDE**: Keil MDK-ARM V5 (ARMCC V5)  
 > **标准库**: STM32F10x_StdPeriph_Driver V3.5
 
 ---
@@ -40,7 +40,73 @@
   - SysTick: Pre=0, Sub=0
   - USART1: Pre=1, Sub=1
 - **FSMC**: Bank1, 16bit NOR/PSRAM 模式, 驱动ILI9341 (8080并口)
-- **BKP**: 备份寄存器存储高分 (DR1=magic, DR2~DR16=每关最佳步数)
+- **PWR + BKP**: `PWR_BackupAccessCmd` 使能备份域访问, 备份寄存器存储高分 (DR1=magic, DR2~DR16=每关最佳步数)
+
+### 1.3 硬件连接与跳线设置
+
+> 实验板型号: MDV-STM32-F107（NUAA_CM3_107 核心板 + 底板）
+
+#### 1.3.1 基本连接（所有实验通用）
+
+（1）连接 +5V 电源到开发板的 USB Mini-B 接口（底板自带），打开电源开关。板载 LDO 会将 5V 降压为 3.3V 供 MCU 及外设使用。
+
+（2）将 J-Link 或 ST-Link 仿真器连接到 MDV-STM32-F107 嵌入式系统实验开发板的 20Pin JTAG 插座上（兼容 SWD 接口：SWDIO=PA13, SWCLK=PA14）。将仿真器的 USB 插头连接到 PC 的 USB 插口。
+
+> 注意: 如果开发板已通过 USB Mini-B 供电，仿真器无需再提供 3.3V 供电，两种供电方式不可同时使用。
+
+（3）LCD 模块（ILI9341, 3.2 寸 TFT 320×240 横屏）通过 40Pin 排线直接插接在底板 J1 排母上，无需额外飞线。LCD 以 FSMC 8080 并口方式与 MCU 通信：
+- 16 位数据总线 D0~D15 → PE0~PE15
+- 片选 CS → PC6，寄存器选择 RS → PD13
+- 写使能 WR → PD14，读使能 RD → PD15
+- 背光 BL → PB14（1=亮, 0=灭）
+
+（4）按键、LED、蜂鸣器均焊接在底板上，通过 PCB 走线直连 MCU，无需额外设置跳线：
+- KEY1（上）→ PD11，KEY2（下）→ PD12
+- KEY3（左/确认）→ PC13，KEY4（右/返回）→ PA0 (WAKEUP)
+- LED1~4 → PD2, PD3, PD4, PD7（低电平点亮）
+- LED5 → PB13（低电平点亮）
+- 蜂鸣器 BEEP → PC0（1=响, 0=停，软件 PWM 驱动）
+
+（5）如需使用 PC 键盘操控（USART1 串口通信，115200-8-N-1）：用杜邦线将 USB 转 TTL 串口模块（如 CH340、CP2102）与底板连接：
+```
+MCU  PA9  (TX)  ────  串口模块 RX
+MCU  PA10 (RX)  ────  串口模块 TX
+底板 GND        ────  串口模块 GND
+底板 3.3V       ────  串口模块 VCC（切勿接 5V!）
+```
+将串口模块 USB 端插入 PC，打开串口终端（波特率 115200，数据位 8，无校验，停止位 1），即可使用 W/A/S/D 控制方向、U 撤销、R 重置、M 返回菜单。
+
+> 提示: 如果底板有 USART1 跳线（JP23、JP24），将两者短接到右端，使 PA9 连接 U1TX、PA10 连接 U1RX，则可直接使用底板上的 RS-232 接口（DB9）连接 PC，无需外部串口模块。
+
+#### 1.3.2 软件准备与编译下载
+
+（1）复制本工程 "pushBit" 文件夹中的所有内容到 D 盘（或任意路径），双击 `pushBit\Project\Project.uvprojx` 工程文件，在 Keil uVision V5 (ARMCC V5) 中打开。
+
+（2）打开后阅读 `User/Main/main.c`（主循环与状态机）、`User/Main/hw_config.c`（GPIO/USART/NVIC 初始化）、`User/Lcd/lcd.c`（ILI9341 FSMC 驱动）了解程序结构。
+
+（3）按 F7 功能键编译并链接工程，确认 0 Error, 0 Warning。
+
+（4）按 Ctrl+F5 键或单击调试（Debug）按钮，进入集成调试环境。
+
+（5）按 F5 功能键全速运行，观察 LCD 上显示的启动画面 → 菜单界面。按 KEY1 (PD11) / KEY2 (PD12) 上下切换菜单项，按 KEY3 (PC13) 确认进入游戏或选关界面，按 KEY4 (PA0) 返回。
+
+（6）进入游戏后在推箱子界面按方向键移动玩家。短按 (<0.8s) 移动，长按 (>0.8s) 撤销，超长按 (>2s) 的 KEY4 返回菜单。通关后自动进入下一关，有通关动画与音效。
+
+（7）如需查看串口控制功能：连接 USB 转串口模块（步骤 1.3.1-(5)），打开 PC 端串口助手（115200-8-N-1），键入 W/A/S/D 控制方向，U=撤销，R=重置，M=返回菜单，观察 LCD 同步变化。
+
+#### 1.3.3 引脚速查
+
+| 外设 | MCU 引脚 | 连接方式 |
+|------|---------|---------|
+| LCD D0~D15 | PE0 ~ PE15 | 40Pin 排线 → 底板 J1 |
+| LCD CS/RS/WR/RD | PC6, PD13, PD14, PD15 | 同上 |
+| LCD 背光 | PB14 | 同上 |
+| KEY1~4 | PD11, PD12, PC13, PA0 | 底板焊接 |
+| LED1~4 | PD2, PD3, PD4, PD7 | 底板焊接 |
+| LED5 | PB13 | 底板焊接 |
+| 蜂鸣器 | PC0 | 底板焊接 |
+| USART1 TX/RX | PA9, PA10 | 杜邦线 → 串口模块 |
+| SWD 调试 | PA13(SWDIO), PA14(SWCLK) | 20Pin JTAG 插座 |
 
 ---
 
