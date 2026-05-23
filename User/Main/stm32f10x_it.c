@@ -47,7 +47,6 @@ static void Input_Scan(void)
     uint8_t keys[4];
     uint32_t now = g_systick;
     uint8_t i;
-    int8_t dx, dy;
     InputEvent ev;
 
     if (now - g_last_scan < 10) return;

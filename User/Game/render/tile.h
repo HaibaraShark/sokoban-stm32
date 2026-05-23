@@ -3,7 +3,6 @@
 
 #include "../config.h"
 
-void Tile_Init(void);
 uint8_t Tile_GetSize(uint8_t map_w, uint8_t map_h);
 void Tile_GetOffset(uint8_t map_w, uint8_t map_h,
                     uint16_t *ox, uint16_t *oy, uint8_t *ts);

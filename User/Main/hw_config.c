@@ -83,7 +83,7 @@ void NVIC_Configuration(void)
     NVIC_Init(&NVIC_InitStructure);
 
     /* SysTick 中断 */
-    NVIC_InitStructure.NVIC_IRQChannel                   = SysTick_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannel                   = (uint8_t)SysTick_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority  = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority         = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd                 = ENABLE;
@@ -95,7 +95,6 @@ void NVIC_Configuration(void)
 /* 如果你的板子 PC0 是蜂鸣器, 此处用位带操作做软件 PWM (在主循环或中断里翻转)  */
 void BEEP_Init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
     /* PC0 已经在上面的 GPIO_Configuration 里初始化, 这里仅做频率配置准备 */
     /* 蜂鸣器采用 TIM2 CH1_ETR 或纯 GPIO 翻转方式 (见 audio 模块) */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);

@@ -15,13 +15,14 @@ void Audio_Init(void)
 
 void Audio_Beep(uint16_t freq, uint16_t duration_ms)
 {
+    uint32_t half_us, cycles, i;
+
     if (freq == 0) {
         Delay_ms(duration_ms);
         return;
     }
-    uint32_t half_us = 500000 / freq;
-    uint32_t cycles  = (uint32_t)duration_ms * 1000 / (half_us * 2);
-    uint32_t i;
+    half_us = 500000 / freq;
+    cycles  = (uint32_t)duration_ms * 1000 / (half_us * 2);
     for (i = 0; i < cycles; i++) {
         BEEP(1);
         delay_us(half_us);

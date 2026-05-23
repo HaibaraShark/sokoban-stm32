@@ -14,7 +14,8 @@ void Anim_WinSequence(uint8_t level, uint32_t steps, uint32_t best)
         /* 隔行画半透明黑线 (模拟变暗) */
         uint16_t y;
         for (y = 0; y < SCREEN_H; y += 2) {
-            LCD_DrawLine(0, y, SCREEN_W - 1, y, COLOR_BLACK);
+            POINT_COLOR = COLOR_BLACK;
+            LCD_DrawLine(0, y, SCREEN_W - 1, y);
         }
         Delay_ms(30);
     }
@@ -55,6 +56,8 @@ void Anim_WinSequence(uint8_t level, uint32_t steps, uint32_t best)
 /* ---- 启动画面 ---- */
 void Anim_BootLogo(void)
 {
+    uint8_t p;
+
     LCD_Clear(COLOR_BLACK);
 
     /* 标题 */
@@ -69,7 +72,6 @@ void Anim_BootLogo(void)
              (uint8_t *)"STM32F107VCT6", 16, 0);
 
     /* 进度条动画 */
-    uint8_t p;
     for (p = 0; p <= 100; p += 2) {
         LCD_Fill(40, 180, 40 + p * 240 / 100, 190, COLOR_BLUE);
         Delay_ms(15);

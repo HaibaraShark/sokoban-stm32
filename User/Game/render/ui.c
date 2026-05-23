@@ -9,9 +9,10 @@ void UI_DrawButton(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 {
     uint16_t border = selected ? COLOR_YELLOW : COLOR_GRAY;
     LCD_Fill(x, y, x + w - 1, y + h - 1, bg);
-    LCD_DrawRectangle(x, y, x + w - 1, y + h - 1, border);
+    POINT_COLOR = border;
+    LCD_DrawRectangle(x, y, x + w - 1, y + h - 1);
     if (selected)
-        LCD_DrawRectangle(x + 1, y + 1, x + w - 2, y + h - 2, border);
+        LCD_DrawRectangle(x + 1, y + 1, x + w - 2, y + h - 2);
     Font_DrawCenter(x, y + (h - 16) / 2, w, text, fg, bg, 16);
 }
 
@@ -28,10 +29,12 @@ void UI_DrawMenu(const MenuItem *items, uint8_t count)
 void UI_DrawProgressBar(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                         uint8_t pct)
 {
+    uint16_t fw;
     LCD_Fill(x, y, x + w - 1, y + h - 1, COLOR_DARKGRAY);
-    LCD_DrawRectangle(x, y, x + w - 1, y + h - 1, COLOR_GRAY);
+    POINT_COLOR = COLOR_GRAY;
+    LCD_DrawRectangle(x, y, x + w - 1, y + h - 1);
     if (pct > 100) pct = 100;
-    uint16_t fw = (uint16_t)w * pct / 100;
+    fw = (uint16_t)w * pct / 100;
     if (fw > 0)
         LCD_Fill(x + 1, y + 1, x + fw, y + h - 2, COLOR_GREEN);
 }
@@ -42,6 +45,9 @@ void UI_DrawLevelGrid(uint8_t page, uint8_t cursor, uint8_t unlocked)
     uint16_t bx = 30, by = 40;
     uint16_t bw = 60, bh = 50;
     uint16_t gap = 10;
+    uint16_t x, y;
+    uint8_t  sel;
+    uint16_t fg, bg;
 
     LCD_Fill(0, 0, SCREEN_W - 1, SCREEN_H - 1, COLOR_BLACK);
     Show_Str(80, 5, COLOR_WHITE, COLOR_BLACK,
@@ -51,11 +57,11 @@ void UI_DrawLevelGrid(uint8_t page, uint8_t cursor, uint8_t unlocked)
         for (c = 0; c < 4; c++) {
             id = page * 16 + r * 4 + c;
             if (id >= MAX_LEVELS) break;
-            uint16_t x = bx + c * (bw + gap);
-            uint16_t y = by + r * (bh + gap);
-            uint8_t  sel = (id == cursor) ? 1 : 0;
-            uint16_t fg = (id <= unlocked) ? COLOR_WHITE : COLOR_GRAY;
-            uint16_t bg = (id <= unlocked) ? COLOR_DARKBLUE : COLOR_DARKGRAY;
+            x = bx + c * (bw + gap);
+            y = by + r * (bh + gap);
+            sel = (id == cursor) ? 1 : 0;
+            fg = (id <= unlocked) ? COLOR_WHITE : COLOR_GRAY;
+            bg = (id <= unlocked) ? COLOR_DARKBLUE : COLOR_DARKGRAY;
             UI_DrawButton(x, y, bw, bh, "", fg, bg, sel);
             LCD_ShowNum(x + 15, y + 15, id + 1, 2, 16);
             if (g_best_steps[id] > 0) {
