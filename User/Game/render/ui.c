@@ -69,7 +69,7 @@ void UI_DrawLevelGrid(uint8_t page, uint8_t cursor, uint8_t unlocked)
             }
         }
     }
-    /* 翻页提示 */
-    Show_Str(10, 220, COLOR_GRAY, COLOR_BLACK,
-             (uint8_t *)"<>:Page  OK:Start", 12, 0);
+    /* 操作提示 */
+    Show_Str(15, 220, COLOR_GRAY, COLOR_BLACK,
+             (uint8_t *)"Hold:Enter  Long:Back", 12, 0);
 }

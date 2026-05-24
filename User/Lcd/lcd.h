@@ -204,7 +204,9 @@ void Test_Color(void);
 void Test_FillRec(void);
 void Test_Circle(void);
 void English_Font_test(void);
+#if 0
 void Chinese_Font_test(void);
+#endif
 void Pic_test(void);
 void Load_Drow_Dialog(void);
 void Touch_Test(void);

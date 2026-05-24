@@ -7,6 +7,7 @@
  */
 #include "stm32f10x.h"
 #include "hw_config.h"
+#include "delay.h"
 #include "lcd.h"
 #include "stm32f10x_it.h"
 #include "../Game/config.h"
@@ -17,6 +18,7 @@
 #include "../Game/render/anim.h"
 #include "../Game/render/font.h"
 #include "../Game/logic/score.h"
+#include "../Game/drv/audio.h"
 
 extern volatile uint32_t g_systick;
 
@@ -57,12 +59,14 @@ int main(void)
 {
     InputEvent ev;
     uint8_t   splash_done = 0;
+    uint8_t   help_drawn  = 0;
     uint32_t  splash_start;
 
     SystemInit();
     if (SysTick_Config(SystemCoreClock / 1000)) {
         while (1);
     }
+    Delay_Init();
 
     GPIO_Configuration();
     NVIC_Configuration();
@@ -74,6 +78,7 @@ int main(void)
     LCD_Clear(COLOR_BLACK);
 
     Score_Load();
+    Audio_Init();
 
     Anim_BootLogo();
     splash_start = g_systick;
@@ -95,20 +100,29 @@ int main(void)
 
         switch (g_state) {
         case STATE_MENU:
-            if (ev != INPUT_NONE) { Menu_Update(ev); Menu_Draw(); }
+            if (ev != INPUT_NONE) {
+                Menu_Update(ev);
+                if (g_state == STATE_MENU) Menu_Draw();
+            }
             break;
         case STATE_GAME:
             if (ev != INPUT_NONE) Game_Update(ev);
             break;
         case STATE_LEVEL_SELECT:
-            if (ev != INPUT_NONE) { Select_Update(ev); Select_Draw(); }
+            if (ev != INPUT_NONE) {
+                Select_Update(ev);
+                if (g_state == STATE_LEVEL_SELECT) Select_Draw();
+            }
             break;
         case STATE_HELP:
-            Help_Draw();
             if (ev != INPUT_NONE) {
+                help_drawn = 0;
                 Menu_Enter();
                 g_state = STATE_MENU;
                 Menu_Draw();
+            } else if (!help_drawn) {
+                Help_Draw();
+                help_drawn = 1;
             }
             break;
         default:

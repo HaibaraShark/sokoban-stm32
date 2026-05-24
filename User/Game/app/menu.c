@@ -6,6 +6,7 @@
 #include "../render/font.h"
 #include "../render/ui.h"
 #include "../logic/score.h"
+#include "../drv/audio.h"
 #include "hw_config.h"
 
 static uint8_t g_menu_cursor;
@@ -38,10 +39,13 @@ void Menu_Update(InputEvent ev)
     switch (ev) {
     case INPUT_UP:
         g_menu_cursor = (g_menu_cursor + MENU_COUNT - 1) % MENU_COUNT;
+        Audio_Play(SOUND_SELECT);
         break;
     case INPUT_DOWN:
         g_menu_cursor = (g_menu_cursor + 1) % MENU_COUNT;
+        Audio_Play(SOUND_SELECT);
         break;
+    case INPUT_LEFT:    /* KEY3 = 确认 */
     case INPUT_CONFIRM:
         switch (g_menu_cursor) {
         case 0: Menu_StartGame(); break;

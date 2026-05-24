@@ -138,9 +138,10 @@ MCU  PA10 (RX)  ────  串口模块 TX
 
 | 关卡最大维度 | 瓦片尺寸 | 最大格子数(240/ts) | 应用关卡 |
 |-------------|---------|-------------------|---------|
-| ≤ 10格 | 22px | 10×10 | Lv1~8 |
-| 11~15格 | 16px | 15×15 | Lv9~14 |
-| 16~17格 | 14px | 17×17 | Lv15 |
+| ≤ 10格 | 22px | 10×10 | Lv1~8 (8x8~10x9) |
+| > 10格 | 16px | 15×15 | Lv9~15 (11x9~12x10) |
+
+实际关卡宽度 8~12，22px/16px 两档完全覆盖。
 
 ### 2.2 颜色编码 (RGB565)
 
@@ -187,7 +188,7 @@ MCU  PA10 (RX)  ────  串口模块 TX
 ├────────────────────────────────────────────┤
 │ HAL: lcd.c/h (ILI9341 FSMC),              │
 │      hw_config.c/h (GPIO/USART/NVIC),      │
-│      delay.c/h (软件延时)                   │
+│      delay.c/h (DWT硬件延时 + SysTick)     │
 └────────────────────────────────────────────┘
 ```
 
@@ -196,18 +197,20 @@ MCU  PA10 (RX)  ────  串口模块 TX
 ```
 main()
   ├── SystemInit() + SysTick_Config()
+  ├── Delay_Init()           // DWT 周期计数器初始化
   ├── GPIO_Configuration()  // LED, 按键, 蜂鸣器
   ├── NVIC_Configuration()  // USART1, SysTick 中断优先级
   ├── USART_Configuration() // 115200-8-N-1
   ├── LCD_Init()            // ILI9341 FSMC 初始化
   ├── Score_Load()          // 从BKP寄存器读取高分
+  ├── Audio_Init()          // 蜂鸣器初始静音
   ├── Anim_BootLogo()       // 启动画面(3秒或按键跳过)
   │
   └── while(1):
         ev = Input_Poll()      // 按键扫描 + 串口接收
         switch(g_state):
           STATE_MENU:   Menu_Update(ev); Menu_Draw()
-          STATE_GAME:   Game_Update(ev)        // 增量重绘
+          STATE_GAME:   Game_Update(ev)        // 增量重绘 + 音效
           STATE_SELECT: Select_Update(ev); Select_Draw()
           STATE_HELP:   Help_Draw(); 等待按键
 ```
@@ -350,8 +353,9 @@ Game_Update(方向):
 
 ### 5.1 按键扫描 (stm32f10x_it.c)
 
-- **扫描频率**: 10ms (SysTick 驱动)
-- **去抖**: 按下沿和释放沿各检查一次, 中间状态不变
+- **扫描频率**: 10ms (SysTick 驱动, `g_systick` 差值判断)
+- **去抖**: 2 阶段消抖 — 连续两次读取值一致才确认状态变更
+- **事件发射策略**: 短按在释放时发射 (若未发过长按), 长按在持续按下达到阈值时即刻发射
 - **长短按识别**:
 
 ```
@@ -410,29 +414,35 @@ USART1 中断接收, 存入 32 字节环形缓冲。主循环读取并解析:
 
 ### 7.1 蜂鸣器驱动
 
-PC0 无硬件 TIM 通道, 采用软件循环翻转 (阻塞式, 音效短):
+PC0 无硬件 TIM 通道, 采用软件 GPIO 翻转 + DWT 硬件延时 (阻塞式, 音效短):
 
 ```c
 void Audio_Beep(uint16_t freq, uint16_t duration_ms) {
     uint32_t half_us = 500000 / freq;
     uint32_t cycles = duration_ms * 1000 / (half_us * 2);
     for (i = 0; i < cycles; i++) {
-        BEEP(1); delay_us(half_us);
-        BEEP(0); delay_us(half_us);
+        BEEP(1); Delay_us(half_us);
+        BEEP(0); Delay_us(half_us);
     }
 }
 ```
 
+`Delay_us()` 基于 DWT 周期计数器 (Cortex-M3 硬件), 不受编译器优化影响, 且 SysTick 中断在延时期间持续递增 `g_systick`。
+
 ### 7.2 音效表
 
-| 音效 | 频率 | 时长 | 触发 |
-|------|------|------|------|
-| SOUND_MOVE | 300Hz | 30ms | 纯移动 |
-| SOUND_PUSH | 500Hz | 80ms | 推动箱子 |
-| SOUND_BLOCKED | 120Hz | 120ms | 撞墙/阻塞 |
-| SOUND_WIN | 523→659→784→1047Hz | 多段 | 过关 |
-| SOUND_SELECT | 800Hz | 25ms | 菜单选择 |
-| SOUND_UNDO | 500→300Hz | 30+40ms | 撤销 |
+| 音效 | 频率 | 时长 | 触发位置 |
+|------|------|------|---------|
+| SOUND_MOVE | 300Hz | 30ms | game.c: 玩家纯移动 |
+| SOUND_PUSH | 500Hz | 80ms | game.c: 推动箱子 |
+| SOUND_BLOCKED | 120Hz | 120ms | game.c: 撞墙/被挡 |
+| SOUND_WIN | 523→659→784→1047Hz | 多段 | game.c: 过关 |
+| SOUND_SELECT | 800Hz | 25ms | menu.c + select.c: 菜单/选关操作 |
+| SOUND_UNDO | 500→300Hz | 30+40ms | game.c: 撤销 |
+
+### 7.3 初始化
+
+`Audio_Init()` 在 `main.c` 中调用 (位于 `Score_Load()` 之后), 调用 `BEEP(0)` 确保蜂鸣器初始为静音。`BEEP_Init()` (hw_config.c) 启用 TIM2 时钟备用, 当前使用软件翻转无需 TIM 通道。
 
 ---
 
@@ -442,21 +452,23 @@ void Audio_Beep(uint16_t freq, uint16_t duration_ms) {
 
 | 关卡 | 名称 | 尺寸 | 箱子数 | 难度 |
 |------|------|------|--------|------|
-| 1 | Baby Steps | 9×7 | 2 | ★ 入门: 直线推箱 |
-| 2 | Easy Start | 9×7 | 2 | ★ 入门: 基础移动 |
-| 3 | Corner Room | 9×8 | 3 | ★☆ 初级: 避开墙角 |
-| 4 | T-Shape | 10×8 | 3 | ★☆ 初级: T形布局 |
-| 5 | ZigZag | 10×8 | 3 | ★★ 基础: 曲折路径 |
-| 6 | Split Room | 10×9 | 4 | ★★ 基础: 分隔房间 |
-| 7 | Spiral | 11×10 | 4 | ★★☆ 中级: 螺旋路径 |
-| 8 | Warehouse | 10×9 | 4 | ★★☆ 中级: 典型仓库 |
-| 9 | Cross | 11×10 | 5 | ★★★ 中级: 十字布局 |
-| 10 | Labyrinth | 12×9 | 5 | ★★★ 进阶: 迷宫式 |
-| 11 | Tunnel | 11×10 | 5 | ★★★ 进阶: 隧道限制 |
-| 12 | Warehouse II | 12×11 | 6 | ★★★☆ 进阶: 大仓库 |
-| 13 | Fortress | 13×11 | 6 | ★★★★ 高级: 堡垒 |
-| 14 | The Vault | 13×11 | 6 | ★★★★ 高级: 密室 |
-| 15 | Final Challenge | 14×11 | 6 | ★★★★★ 终极: 综合挑战 |
+| 1 | First Push | 8×8 | 2 | ★ 入门: 直线推箱 |
+| 2 | Side Step | 9×7 | 2 | ★ 入门: 基础移动 |
+| 3 | Corner | 8×8 | 2 | ★☆ 初级: 避开墙角 |
+| 4 | Line Up | 9×7 | 3 | ★☆ 初级: 三箱一排 |
+| 5 | Split | 9×8 | 3 | ★★ 基础: 分隔区域 |
+| 6 | Through | 10×8 | 3 | ★★ 基础: 穿越布局 |
+| 7 | Square | 9×9 | 4 | ★★☆ 中级: 方形对称 |
+| 8 | Rooms | 10×9 | 4 | ★★☆ 中级: 多房间 |
+| 9 | Cross Path | 10×9 | 4 | ★★★ 中级: 十字路径 |
+| 10 | ZigZag | 11×9 | 4 | ★★★ 进阶: 四角目标 |
+| 11 | Maze | 11×10 | 5 | ★★★ 进阶: 柱子迷宫 |
+| 12 | Warehouse I | 11×10 | 5 | ★★★☆ 进阶: 仓库布局 |
+| 13 | Labyrinth | 12×10 | 5 | ★★★☆ 高级: 走廊迷宫 |
+| 14 | Castle | 12×10 | 5 | ★★★★ 高级: 城堡 |
+| 15 | Fortress | 12×10 | 6 | ★★★★★ 终极: 6箱挑战 |
+
+全部 15 关通过 Python 脚本自动验证: T=B 数量匹配、玩家坐标正确、无墙角死锁、玩家可达所有推箱位置。
 
 ### 8.2 关卡制作 (Python 工具)
 

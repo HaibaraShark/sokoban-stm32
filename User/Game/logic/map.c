@@ -6,6 +6,7 @@ MapData g_map;
 void Map_Load(const LevelDef *def)
 {
     uint16_t sz = (uint16_t)def->width * def->height;
+    if (sz > MAP_MAX_SIZE) return;
     g_map.width  = def->width;
     g_map.height = def->height;
     memcpy(g_map.ground,   def->ground,   sz);

@@ -11,8 +11,9 @@ void Font_DrawString(uint16_t x, uint16_t y, const char *str,
 void Font_DrawNum(uint16_t x, uint16_t y, uint32_t num,
                   uint8_t len, uint8_t size, uint16_t fg, uint16_t bg)
 {
+    POINT_COLOR = fg;
+    BACK_COLOR  = bg;
     LCD_ShowNum(x, y, num, len, size);
-    (void)fg; (void)bg;
 }
 
 void Font_DrawCenter(uint16_t x, uint16_t y, uint16_t w,

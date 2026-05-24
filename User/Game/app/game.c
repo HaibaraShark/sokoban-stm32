@@ -10,6 +10,7 @@
 #include "../render/tile.h"
 #include "../render/anim.h"
 #include "../data/levels.h"
+#include "../drv/audio.h"
 
 static uint8_t     g_cur_level;
 static uint8_t     g_game_running;
@@ -28,11 +29,8 @@ void Game_Enter(uint8_t level_id)
     Score_Reset();
     Tile_GetOffset(g_cur_def->width, g_cur_def->height, &g_ox, &g_oy, &g_ts);
 
-    /* 清屏 + 绘制 */
-    Tile_FillInfoPanel();
-    Tile_DrawMap(g_ox, g_oy, g_ts);
-    Tile_UpdateInfo(g_cur_level, g_cur_def->name, g_steps,
-                    g_best_steps[g_cur_level]);
+    /* 全量绘制 */
+    Game_Draw();
 }
 
 uint8_t Game_IsRunning(void)
@@ -60,10 +58,14 @@ void Game_Update(InputEvent ev)
             if (ev == INPUT_RIGHT) dx =  1;
 
             res = Move_Execute(dx, dy, &rec);
-            if (res == MOVE_WALL || res == MOVE_BOX_BLOCKED || res == MOVE_SAME)
+            if (res == MOVE_WALL || res == MOVE_BOX_BLOCKED) {
+                Audio_Play(SOUND_BLOCKED);
                 break;
+            }
+            if (res == MOVE_SAME) break;
 
-            /* 有效移动: 计步 + 压栈 */
+            /* 有效移动: 音效 + 计步 + 压栈 */
+            Audio_Play((res == MOVE_BOX_OK) ? SOUND_PUSH : SOUND_MOVE);
             Score_AddStep();
             Undo_Push(&rec);
 
@@ -97,9 +99,8 @@ void Game_Update(InputEvent ev)
 
             /* 胜利? */
             if (Move_CheckWin()) {
+                Audio_Play(SOUND_WIN);
                 Score_SaveBest(g_cur_level);
-                Tile_UpdateInfo(g_cur_level, g_cur_def->name,
-                                g_steps, g_best_steps[g_cur_level]);
                 Anim_WinSequence(g_cur_level, g_steps,
                                  g_best_steps[g_cur_level]);
 
@@ -128,6 +129,7 @@ void Game_Update(InputEvent ev)
         {
             MoveRecord undo_rec;
             if (Undo_Pop(&undo_rec)) {
+                Audio_Play(SOUND_UNDO);
                 /* 脏矩形: 玩家旧位置、新位置、箱子(如有) */
                 uint8_t w = g_map.width;
 
@@ -183,6 +185,8 @@ void Game_Update(InputEvent ev)
 
 void Game_Draw(void)
 {
-    /* 游戏画面已通过增量脏矩形实时更新 */
-    /* Game_Draw 只负责在进入时全量绘制, 后续由 Game_Update 调脏矩形 */
+    Tile_FillInfoPanel();
+    Tile_DrawMap(g_ox, g_oy, g_ts);
+    Tile_UpdateInfo(g_cur_level, g_cur_def->name, g_steps,
+                    g_best_steps[g_cur_level]);
 }

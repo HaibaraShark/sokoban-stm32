@@ -1,18 +1,13 @@
 #include "audio.h"
 #include "hw_config.h"
-
-/* 软件延时微秒 (粗略) */
-static void delay_us(uint32_t us)
-{
-    volatile uint32_t i;
-    for (i = 0; i < us * 9; i++);  /* 72MHz, 约 9 个循环 = 1us */
-}
+#include "delay.h"
 
 void Audio_Init(void)
 {
     BEEP(0);
 }
 
+/* 单音调蜂鸣: 使用 DWT 硬件延时, SysTick 中断不冻结, g_systick 持续递增 */
 void Audio_Beep(uint16_t freq, uint16_t duration_ms)
 {
     uint32_t half_us, cycles, i;
@@ -25,9 +20,9 @@ void Audio_Beep(uint16_t freq, uint16_t duration_ms)
     cycles  = (uint32_t)duration_ms * 1000 / (half_us * 2);
     for (i = 0; i < cycles; i++) {
         BEEP(1);
-        delay_us(half_us);
+        Delay_us(half_us);
         BEEP(0);
-        delay_us(half_us);
+        Delay_us(half_us);
     }
 }
 

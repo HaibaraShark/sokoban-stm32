@@ -52,6 +52,8 @@ void Score_Load(void)
 void Score_Save(void)
 {
     uint8_t i;
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR | RCC_APB1Periph_BKP, ENABLE);
+    PWR_BackupAccessCmd(ENABLE);
     BKP_WriteBackupRegister(BKP_DR1, BKP_MAGIC);
     for (i = 0; i < MAX_LEVELS; i++) {
         BKP_WriteBackupRegister(BKP_DR2 + i, (uint16_t)g_best_steps[i]);

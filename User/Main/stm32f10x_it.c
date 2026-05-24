@@ -7,10 +7,12 @@ volatile uint32_t g_systick;
 
 /* 按键扫描变量 */
 static uint32_t g_last_scan;
-static uint8_t  g_key_state[4];     /* 0=释放, 1=按下 */
-static uint32_t g_key_press_time[4]; /* 按下时刻 */
-static uint8_t  g_key_emitted[4];    /* 是否已发射短按事件 */
-static uint8_t  g_long_emitted[4];   /* 是否已发射长按事件 */
+static uint8_t  g_key_state[4];        /* 0=释放, 1=按下 */
+static uint32_t g_key_press_time[4];   /* 按下时刻 */
+static uint8_t  g_key_emitted[4];       /* 是否已发射短按事件 */
+static uint8_t  g_long_emitted[4];      /* 是否已发射长按事件(0.8s撤销) */
+static uint8_t  g_superlong_emitted[4]; /* 是否已发射超长按事件(2s菜单) */
+static uint8_t  g_key_debounce[4];      /* 消抖: 上一次读取值 */
 
 /* 输入事件队列 */
 #define EVQ_SIZE 8
@@ -58,37 +60,49 @@ static void Input_Scan(void)
     keys[3] = (KEY_RIGHT == KEY_PRESSED);
 
     for (i = 0; i < 4; i++) {
+        /* 消抖: 连续两次一致才确认 */
+        if (keys[i] != g_key_debounce[i]) {
+            g_key_debounce[i] = keys[i];
+            continue;
+        }
         if (keys[i] && !g_key_state[i]) {
             /* 按下沿 */
             g_key_state[i]   = 1;
             g_key_press_time[i] = now;
-            g_key_emitted[i] = 0;
-            g_long_emitted[i] = 0;
+            g_key_emitted[i]       = 0;
+            g_long_emitted[i]      = 0;
+            g_superlong_emitted[i] = 0;
         } else if (!keys[i] && g_key_state[i]) {
             /* 释放沿 */
             g_key_state[i] = 0;
             /* 短按: 释放时若未发过事件, 发短按 */
             if (!g_key_emitted[i] && !g_long_emitted[i]) {
                 g_key_emitted[i] = 1;
-                ev = (InputEvent)(INPUT_UP + i);
-                g_ev_queue[g_ev_head] = ev;
-                g_ev_head = (g_ev_head + 1) % EVQ_SIZE;
+                if (((g_ev_head + 1) % EVQ_SIZE) != g_ev_tail) {
+                    ev = (InputEvent)(INPUT_UP + i);
+                    g_ev_queue[g_ev_head] = ev;
+                    g_ev_head = (g_ev_head + 1) % EVQ_SIZE;
+                }
             }
         } else if (keys[i] && g_key_state[i]) {
             /* 持续按下: 检测长按 */
             uint32_t held = now - g_key_press_time[i];
-            if (held > 2000 && !g_long_emitted[i]) {
+            if (held > 2000 && !g_superlong_emitted[i]) {
                 /* 超长按 2s: 菜单 (仅 KEY4 / RIGHT) */
                 if (i == 3) {
-                    g_long_emitted[i] = 1;
-                    g_ev_queue[g_ev_head] = INPUT_MENU;
-                    g_ev_head = (g_ev_head + 1) % EVQ_SIZE;
+                    g_superlong_emitted[i] = 1;
+                    if (((g_ev_head + 1) % EVQ_SIZE) != g_ev_tail) {
+                        g_ev_queue[g_ev_head] = INPUT_MENU;
+                        g_ev_head = (g_ev_head + 1) % EVQ_SIZE;
+                    }
                 }
             } else if (held > 800 && !g_key_emitted[i] && !g_long_emitted[i]) {
                 /* 长按 0.8s: 撤销 */
                 g_long_emitted[i] = 1;
-                g_ev_queue[g_ev_head] = INPUT_UNDO;
-                g_ev_head = (g_ev_head + 1) % EVQ_SIZE;
+                if (((g_ev_head + 1) % EVQ_SIZE) != g_ev_tail) {
+                    g_ev_queue[g_ev_head] = INPUT_UNDO;
+                    g_ev_head = (g_ev_head + 1) % EVQ_SIZE;
+                }
             }
         }
     }

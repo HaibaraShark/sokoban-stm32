@@ -26,15 +26,21 @@ void Anim_WinSequence(uint8_t level, uint32_t steps, uint32_t best)
     Delay_ms(500);
 
     /* 步数信息 */
-    Font_DrawCenter(0, 110, SCREEN_W, "Steps:", COLOR_WHITE, COLOR_BLACK, 16);
-    LCD_ShowNum(140, 110, steps, 5, 16);
+    {
+        uint16_t lx = SCREEN_W / 2 - 70;
+        Show_Str(lx, 110, COLOR_WHITE, COLOR_BLACK, (uint8_t *)"Steps:", 16, 0);
+        LCD_ShowNum(lx + 90, 110, steps, 5, 16);
+    }
     Delay_ms(300);
 
-    Font_DrawCenter(0, 135, SCREEN_W, "Best:", COLOR_GREEN, COLOR_BLACK, 16);
-    if (best > 0)
-        LCD_ShowNum(140, 135, best, 5, 16);
-    else
-        Show_Str(140, 135, COLOR_WHITE, COLOR_BLACK, (uint8_t *)"---", 16, 0);
+    {
+        uint16_t lx = SCREEN_W / 2 - 60;
+        Show_Str(lx, 135, COLOR_GREEN, COLOR_BLACK, (uint8_t *)"Best:", 16, 0);
+        if (best > 0)
+            LCD_ShowNum(lx + 90, 135, best, 5, 16);
+        else
+            Show_Str(lx + 90, 135, COLOR_WHITE, COLOR_BLACK, (uint8_t *)"---", 16, 0);
+    }
 
     Delay_ms(300);
 

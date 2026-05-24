@@ -16,6 +16,9 @@ void Tile_GetOffset(uint8_t map_w, uint8_t map_h,
                     uint16_t *ox, uint16_t *oy, uint8_t *ts)
 {
     *ts = Tile_GetSize(map_w, map_h);
+    /* 防止大地图偏移量下溢 */
+    if (map_w * (*ts) > GAME_AREA_W) *ts = GAME_AREA_W / map_w;
+    if (map_h * (*ts) > GAME_AREA_H) *ts = GAME_AREA_H / map_h;
     *ox = (GAME_AREA_W - map_w * (*ts)) / 2;
     *oy = (GAME_AREA_H - map_h * (*ts)) / 2;
 }

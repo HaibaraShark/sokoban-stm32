@@ -14,7 +14,7 @@
 | `Libraries/StdPeriph_Driver` | flash, gpio, rcc, usart, misc, exti, bkp, fsmc, tim, pwr |
 | `Libraries/CMSIS` | core_cm3.c, system_stm32f10x.c, startup_stm32f10x_cl.s |
 | `Lcd` | lcd.c |
-| `Delay` | delay.c |
+| `Delay` | delay.c (DWT 硬件延时) |
 | `Game/App` | app.c, menu.c, game.c, select.c |
 | `Game/Logic` | map.c, move.c, undo.c, score.c |
 | `Game/Render` | tile.c, font.c, ui.c, anim.c |
@@ -85,7 +85,7 @@ Include 路径已预配置，包含 `..\User\Game` 及其全部子目录。
 | KEY4 (右/返回) | PA0 (WAKEUP) | 底板焊接 |
 | LED1~4 | PD2, PD3, PD4, PD7 | 底板焊接, 低电平亮 |
 | LED5 | PB13 | 底板焊接, 低电平亮 |
-| 蜂鸣器 | PC0 | 底板焊接, 软件 PWM |
+| 蜂鸣器 | PC0 | 底板焊接, 软件 GPIO 翻转 (DWT 延时) |
 | USART1 TX | PA9 | 杜邦线 → USB转串口模块 RX |
 | USART1 RX | PA10 | 杜邦线 → USB转串口模块 TX |
 | 电机 (保留) | PB8, PB9 | 未使用 |
@@ -118,7 +118,7 @@ pushBit/
 └── User/
     ├── Main/                     # 入口 + 硬件配置 + 中断服务
     ├── Lcd/                      # ILI9341 TFT 驱动 (横屏 320×240)
-    ├── Delay/                    # 软件延时
+    ├── Delay/                    # DWT 硬件延时 + SysTick
     └── Game/
         ├── config.h              # 全局宏定义
         ├── app/                  # 状态机 (菜单/游戏/选关)
