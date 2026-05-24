@@ -159,8 +159,11 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
              (uint8_t *)"Key:Move", 12, 0);
     y += 14;
     Show_Str(INFO_X + 2, y, COLOR_GRAY, COLOR_DARKBLUE,
-             (uint8_t *)"Long:Undo", 12, 0);
-
+             (uint8_t *)"Hold 0.8s:Undo", 12, 0);
+    y += 14;
+    
+    Show_Str(INFO_X + 2, y, COLOR_GRAY, COLOR_DARKBLUE,
+             (uint8_t *)"Hold 1.5s:Menu", 12, 0);
     y += 20;
     Show_Str(INFO_X + 2, y, COLOR_GRAY, COLOR_DARKBLUE,
              (uint8_t *)"Serial:WASD", 12, 0);
@@ -169,7 +172,7 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
              (uint8_t *)"U=Undo R=Reset", 12, 0);
     y += 14;
     Show_Str(INFO_X + 2, y, COLOR_GRAY, COLOR_DARKBLUE,
-             (uint8_t *)"M=Menu", 12, 0);
+             (uint8_t *)"M=Menu Space=OK", 12, 0);
 }
 
 void Tile_DrawSelectBorder(uint8_t gx, uint8_t gy,

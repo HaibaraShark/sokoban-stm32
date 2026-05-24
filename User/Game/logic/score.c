@@ -14,6 +14,11 @@ void Score_AddStep(void)
     g_steps++;
 }
 
+void Score_SubStep(void)
+{
+    if (g_steps > 0) g_steps--;
+}
+
 void Score_Reset(void)
 {
     g_steps = 0;

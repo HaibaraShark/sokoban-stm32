@@ -6,6 +6,7 @@
 #include "../render/ui.h"
 #include "../logic/score.h"
 #include "../drv/audio.h"
+#include "stm32f10x_it.h"
 #include <string.h>
 
 static uint8_t g_sel_cursor;
@@ -17,6 +18,9 @@ void Select_Enter(void)
     uint8_t i;
     g_sel_cursor = 0;
     g_sel_page   = 0;
+#ifdef TEST_MODE
+    g_max_unlocked = MAX_LEVELS - 1;
+#else
     for (i = 0; i < MAX_LEVELS; i++) {
         if (g_best_steps[i] == 0) {
             g_max_unlocked = i;
@@ -24,6 +28,7 @@ void Select_Enter(void)
         }
     }
     g_max_unlocked = MAX_LEVELS - 1;
+#endif
 }
 
 void Select_Update(InputEvent ev)
@@ -49,13 +54,13 @@ void Select_Update(InputEvent ev)
     case INPUT_CONFIRM:
         if (g_sel_cursor <= g_max_unlocked) {
             Audio_Play(SOUND_SELECT);
-            Game_Enter(g_sel_cursor);
+            Input_Flush(); Game_Enter(g_sel_cursor);
             g_state = STATE_GAME;
         }
         break;
     case INPUT_MENU:
-        Menu_Enter();
-        g_state = STATE_MENU;
+        Input_Flush(); Menu_Enter();
+	    g_state = STATE_MENU;
         break;
     default:
         break;

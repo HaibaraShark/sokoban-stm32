@@ -11,6 +11,7 @@
 #include "../render/anim.h"
 #include "../data/levels.h"
 #include "../drv/audio.h"
+#include "stm32f10x_it.h"
 
 static uint8_t     g_cur_level;
 static uint8_t     g_game_running;
@@ -24,7 +25,7 @@ void Game_Enter(uint8_t level_id)
     g_cur_def   = &g_levels[level_id];
     g_game_running = 1;
 
-    Map_Load(g_cur_def);
+    Input_Flush(); Map_Load(g_cur_def);
     Undo_Init();
     Score_Reset();
     Tile_GetOffset(g_cur_def->width, g_cur_def->height, &g_ox, &g_oy, &g_ts);
@@ -117,7 +118,7 @@ void Game_Update(InputEvent ev)
                     Show_Str(70, 160, COLOR_GREEN, COLOR_BLACK,
                              (uint8_t *)"Congrats!", 16, 0);
                     Delay_ms(3000);
-                    Menu_Enter();
+                    Input_Flush(); Menu_Enter();
                     g_state = STATE_MENU;
                     return;
                 }
@@ -129,9 +130,8 @@ void Game_Update(InputEvent ev)
         {
             MoveRecord undo_rec;
             if (Undo_Pop(&undo_rec)) {
+                uint8_t w = g_map.width; /* 必须在块开头声明 (C89) */
                 Audio_Play(SOUND_UNDO);
-                /* 脏矩形: 玩家旧位置、新位置、箱子(如有) */
-                uint8_t w = g_map.width;
 
                 /* 绘制撤前玩家位置 -> 空地 */
                 Tile_Draw(undo_rec.player_to_x, undo_rec.player_to_y,
@@ -156,7 +156,7 @@ void Game_Update(InputEvent ev)
                         ENT_BOX, g_ox, g_oy, g_ts);
                 }
 
-                /* 步数不减 (保持历史记录), 但更新显示 */
+                Score_SubStep();
                 Tile_UpdateInfo(g_cur_level, g_cur_def->name,
                                 g_steps, g_best_steps[g_cur_level]);
             }
@@ -173,7 +173,7 @@ void Game_Update(InputEvent ev)
         break;
 
     case INPUT_MENU:
-        Menu_Enter();
+        Input_Flush(); Menu_Enter();
         g_state = STATE_MENU;
         g_game_running = 0;
         break;

@@ -34,6 +34,9 @@
 /* ===== 最大关卡数 ===== */
 #define MAX_LEVELS      15
 
+/* ===== 测试模式: 注释掉即为正常闯关模式 ===== */
+#define TEST_MODE       /* 开启后选关页面所有关卡解锁, 可任意跳关 */
+
 /* ===== FSM 状态 ===== */
 typedef enum {
     STATE_SPLASH = 0,

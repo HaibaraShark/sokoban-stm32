@@ -23,6 +23,7 @@ void USART1_IRQHandler(void);
 /* 推箱子游戏: 输入轮询 */
 extern volatile uint32_t g_systick;
 InputEvent Input_Poll(void);
+void      Input_Flush(void);
 
 #ifdef __cplusplus
 }

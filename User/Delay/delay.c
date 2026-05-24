@@ -3,6 +3,26 @@
 /* 全局 SysTick 计数器 (stm32f10x_it.c 中定义, 1ms 递增) */
 extern volatile uint32_t g_systick;
 
+/*
+ * DWT 寄存器定义 (CMSIS v1.30 的 core_cm3.h 缺少 DWT 部分, 此处手动补充)
+ * DWT (Data Watchpoint and Trace) 是 Cortex-M3 的调试单元, 包含硬件周期计数器
+ */
+typedef struct {
+    volatile uint32_t CTRL;
+    volatile uint32_t CYCCNT;
+    volatile uint32_t CPICNT;
+    volatile uint32_t EXCCNT;
+    volatile uint32_t SLEEPCNT;
+    volatile uint32_t LSUCNT;
+    volatile uint32_t FOLDCNT;
+    volatile uint32_t PCSR;
+} DWT_Type;
+
+#define DWT_BASE                (0xE0001000)
+#define DWT                     ((DWT_Type *) DWT_BASE)
+#define DWT_CTRL_CYCCNTENA_Pos  0
+#define DWT_CTRL_CYCCNTENA_Msk  (1UL << DWT_CTRL_CYCCNTENA_Pos)
+
 void Delay_Init(void)
 {
     /* 使能 DWT 硬件周期计数器 (Cortex-M3 调试单元, 用于微秒延时) */

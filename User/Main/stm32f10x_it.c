@@ -87,9 +87,9 @@ static void Input_Scan(void)
         } else if (keys[i] && g_key_state[i]) {
             /* 持续按下: 检测长按 */
             uint32_t held = now - g_key_press_time[i];
-            if (held > 2000 && !g_superlong_emitted[i]) {
-                /* 超长按 2s: 菜单 (仅 KEY4 / RIGHT) */
-                if (i == 3) {
+            if (held >= 1500 && !g_superlong_emitted[i]) {
+                /* 超长按 1.5s: 菜单 (左键/右键) */
+                if (i == 2 || i == 3) {
                     g_superlong_emitted[i] = 1;
                     if (((g_ev_head + 1) % EVQ_SIZE) != g_ev_tail) {
                         g_ev_queue[g_ev_head] = INPUT_MENU;
@@ -149,4 +149,18 @@ InputEvent Input_Poll(void)
     }
 
     return INPUT_NONE;
+}
+
+/* 清空事件队列 (状态切换时调用, 防止残留事件干扰新页面) */
+void Input_Flush(void)
+{
+    uint8_t i;
+    g_ev_head = 0;
+    g_ev_tail = 0;
+    for (i = 0; i < 4; i++) {
+        g_key_state[i]         = 0;
+        g_key_emitted[i]       = 0;
+        g_long_emitted[i]      = 0;
+        g_superlong_emitted[i] = 0;
+    }
 }

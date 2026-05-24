@@ -33,9 +33,9 @@ static void Help_Draw(void)
     Show_Str(10, 52, COLOR_WHITE, COLOR_BLACK,
              (uint8_t *)"4 keys: Move U/D/L/R", 12, 0);
     Show_Str(10, 67, COLOR_WHITE, COLOR_BLACK,
-             (uint8_t *)"Long press: Undo", 12, 0);
+             (uint8_t *)"Hold 0.8s: Undo", 12, 0);
     Show_Str(10, 82, COLOR_WHITE, COLOR_BLACK,
-             (uint8_t *)"Long R-key: Back to Menu", 12, 0);
+             (uint8_t *)"Hold L/R 1.5s: Menu", 12, 0);
 
     Show_Str(10, 110, COLOR_CYAN, COLOR_BLACK,
              (uint8_t *)"[Serial PC Keyboard]", 12, 0);
