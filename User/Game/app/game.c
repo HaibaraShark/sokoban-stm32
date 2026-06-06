@@ -19,6 +19,132 @@ static uint16_t    g_ox, g_oy;
 static uint8_t     g_ts;
 static const LevelDef *g_cur_def;
 
+/* 连击追踪 */
+static uint32_t g_last_move_tick;
+static uint8_t  g_combo;
+
+extern volatile uint32_t g_systick;
+
+/* ---- 非阻塞 LED 状态机 ---- */
+#define LED_MODE_IDLE   0
+#define LED_MODE_FLASH  1
+#define LED_MODE_CHASE  2
+
+static struct {
+    uint8_t  active;
+    uint8_t  mode;
+    uint8_t  count;      /* flash=闪烁次数, chase=循环数 */
+    uint8_t  current;    /* 当前进度 */
+    uint8_t  pos;        /* chase 的 LED 位置 */
+    uint8_t  dir;        /* chase 方向 */
+    uint16_t dur_ms;     /* 每一步时长 */
+    uint32_t next_ms;    /* 下次切换的 g_systick */
+    uint8_t  on;         /* 当前全亮? (flash 用) */
+} g_led;
+
+/* 根据剩余箱子数更新LED (active low, 0=亮) */
+static void UpdateLEDs(void)
+{
+    uint8_t left;
+    left = Move_CountRemaining();
+    LED1((left >= 1) ? 0 : 1);
+    LED2((left >= 2) ? 0 : 1);
+    LED3((left >= 3) ? 0 : 1);
+    LED4((left >= 4) ? 0 : 1);
+    LED5((left >= 5) ? 0 : 1);
+}
+
+static void LED_AllOff(void)
+{
+    LED1(1); LED2(1); LED3(1); LED4(1); LED5(1);
+}
+
+static void LED_AllOn(void)
+{
+    LED1(0); LED2(0); LED3(0); LED4(0); LED5(0);
+}
+
+/* 启动闪烁 (非阻塞) */
+static void LED_StartFlash(uint8_t count, uint16_t dur_ms)
+{
+    g_led.active  = 1;
+    g_led.mode    = LED_MODE_FLASH;
+    g_led.count   = count;
+    g_led.current = 0;
+    g_led.dur_ms  = dur_ms;
+    g_led.on      = 1;
+    g_led.next_ms = g_systick + dur_ms;
+    LED_AllOn();
+}
+
+/* 启动跑马灯 (非阻塞) */
+static void LED_StartChase(uint8_t dir, uint8_t cycles)
+{
+    g_led.active  = 1;
+    g_led.mode    = LED_MODE_CHASE;
+    g_led.count   = cycles;
+    g_led.current = 0;
+    g_led.pos     = 0;
+    g_led.dir     = dir;
+    g_led.dur_ms  = 50;
+    g_led.next_ms = g_systick + 50;
+    LED_AllOff();
+    /* 点亮第一颗 */
+    if (dir) {
+        LED1(0);
+    } else {
+        LED5(0);
+    }
+}
+
+/* 每帧调用 (非阻塞) */
+void LED_Update(void)
+{
+    uint8_t pos;
+
+    if (!g_led.active) return;
+    if (g_systick < g_led.next_ms) return;
+
+    if (g_led.mode == LED_MODE_FLASH) {
+        /* 切换亮灭 */
+        if (g_led.on) {
+            LED_AllOff();
+            g_led.on = 0;
+            g_led.current++;
+            if (g_led.current >= g_led.count) {
+                g_led.active = 0;
+                UpdateLEDs();
+                return;
+            }
+        } else {
+            LED_AllOn();
+            g_led.on = 1;
+        }
+        g_led.next_ms = g_systick + g_led.dur_ms;
+
+    } else if (g_led.mode == LED_MODE_CHASE) {
+        g_led.pos++;
+        if (g_led.pos >= 5) {
+            /* 一轮结束 */
+            g_led.pos = 0;
+            g_led.current++;
+            if (g_led.current >= g_led.count) {
+                g_led.active = 0;
+                UpdateLEDs();
+                return;
+            }
+        }
+        /* 点亮当前位置 */
+        pos = g_led.dir ? g_led.pos : (4 - g_led.pos);
+        LED1(pos == 0 ? 0 : 1);
+        LED2(pos == 1 ? 0 : 1);
+        LED3(pos == 2 ? 0 : 1);
+        LED4(pos == 3 ? 0 : 1);
+        LED5(pos == 4 ? 0 : 1);
+        g_led.next_ms = g_systick + g_led.dur_ms;
+    }
+}
+
 void Game_Enter(uint8_t level_id)
 {
     g_cur_level = level_id;
@@ -32,6 +158,7 @@ void Game_Enter(uint8_t level_id)
 
     /* 全量绘制 */
     Game_Draw();
+    UpdateLEDs();
 }
 
 uint8_t Game_IsRunning(void)
@@ -61,14 +188,33 @@ void Game_Update(InputEvent ev)
             res = Move_Execute(dx, dy, &rec);
             if (res == MOVE_WALL || res == MOVE_BOX_BLOCKED) {
                 Audio_Play(SOUND_BLOCKED);
+                Motor_Pulse(30, 0, 1);
+                LED_StartFlash(3, 50);
                 break;
             }
             if (res == MOVE_SAME) break;
 
-            /* 有效移动: 音效 + 计步 + 压栈 */
+            /* 有效移动: 音效 + 振动 + 计步 + 压栈 + LED */
             Audio_Play((res == MOVE_BOX_OK) ? SOUND_PUSH : SOUND_MOVE);
+            if (res == MOVE_BOX_OK) {
+                Motor_Pulse(100, 0, 1);
+                LED_StartFlash(1, 80);
+            }
+
+            /* 连击检测 */
+            if (g_systick - g_last_move_tick < 400) {
+                g_combo++;
+                if (g_combo >= 3 && (g_combo & 1) == 0) {
+                    Audio_Play(SOUND_COMBO);
+                }
+            } else {
+                g_combo = 0;
+            }
+            g_last_move_tick = g_systick;
+
             Score_AddStep();
             Undo_Push(&rec);
+            UpdateLEDs();
 
             /* 脏矩形重绘 */
             {
@@ -101,6 +247,12 @@ void Game_Update(InputEvent ev)
             /* 胜利? */
             if (Move_CheckWin()) {
                 Audio_Play(SOUND_WIN);
+                {
+                    static const uint16_t win_rhythm[] =
+                        {60,40, 60,40, 200,100, 60,40, 60,40};
+                    Motor_Rhythm(win_rhythm, 10);
+                }
+                LED_StartChase(1, 2);
                 Score_SaveBest(g_cur_level);
                 Anim_WinSequence(g_cur_level, g_steps,
                                  g_best_steps[g_cur_level]);
@@ -110,12 +262,12 @@ void Game_Update(InputEvent ev)
                     Game_Enter(g_cur_level + 1);
                 } else {
                     /* 全通 */
-                    LCD_Fill(0, 0, SCREEN_W - 1, SCREEN_H - 1, COLOR_BLACK);
-                    Show_Str(40, 90, COLOR_YELLOW, COLOR_BLACK,
+                    LCD_Fill(0, 0, SCREEN_W - 1, SCREEN_H - 1, COLOR_CHARCOAL);
+                    Show_Str(40, 85, COLOR_YELLOW, COLOR_CHARCOAL,
                              (uint8_t *)"ALL LEVELS", 24, 0);
-                    Show_Str(60, 120, COLOR_YELLOW, COLOR_BLACK,
+                    Show_Str(60, 115, COLOR_YELLOW, COLOR_CHARCOAL,
                              (uint8_t *)"CLEARED!", 24, 0);
-                    Show_Str(70, 160, COLOR_GREEN, COLOR_BLACK,
+                    Show_Str(70, 155, COLOR_GREEN, COLOR_CHARCOAL,
                              (uint8_t *)"Congrats!", 16, 0);
                     Delay_ms(3000);
                     Input_Flush(); Menu_Enter();
@@ -132,6 +284,8 @@ void Game_Update(InputEvent ev)
             if (Undo_Pop(&undo_rec)) {
                 uint8_t w = g_map.width; /* 必须在块开头声明 (C89) */
                 Audio_Play(SOUND_UNDO);
+                Motor_Pulse(50, 50, 2);
+                LED_StartChase(0, 1);
 
                 /* 绘制撤前玩家位置 -> 空地 */
                 Tile_Draw(undo_rec.player_to_x, undo_rec.player_to_y,
@@ -157,6 +311,7 @@ void Game_Update(InputEvent ev)
                 }
 
                 Score_SubStep();
+                UpdateLEDs();
                 Tile_UpdateInfo(g_cur_level, g_cur_def->name,
                                 g_steps, g_best_steps[g_cur_level]);
             }
@@ -167,6 +322,7 @@ void Game_Update(InputEvent ev)
         Map_Reset(g_cur_def);
         Undo_Clear();
         Score_Reset();
+        UpdateLEDs();
         Tile_DrawMap(g_ox, g_oy, g_ts);
         Tile_UpdateInfo(g_cur_level, g_cur_def->name,
                         g_steps, g_best_steps[g_cur_level]);

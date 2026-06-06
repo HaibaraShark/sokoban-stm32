@@ -88,12 +88,17 @@
 #define USART_TX        GPIO_Pin_9
 #define USART_RX        GPIO_Pin_10
 
-/* ======================== 电机 (保留, 可能用于振动反馈) ======================== */
+/* ======================== 电机振动 ======================== */
 #define Motor_PORT      GPIOB
 #define IA_PIN          GPIO_Pin_8    /* PB8 */
 #define IB_PIN          GPIO_Pin_9    /* PB9 */
 #define IA(x)   ((x) ? (GPIO_SetBits(Motor_PORT, IA_PIN)) : (GPIO_ResetBits(Motor_PORT, IA_PIN)))
 #define IB(x)   ((x) ? (GPIO_SetBits(Motor_PORT, IB_PIN)) : (GPIO_ResetBits(Motor_PORT, IB_PIN)))
+
+void Motor_Init(void);
+void Motor_Pulse(uint16_t on_ms, uint16_t off_ms, uint8_t repeat);
+void Motor_Rhythm(const uint16_t *pattern, uint8_t steps);
+void Motor_Update(void);
 
 /* ======================== 函数声明 ======================== */
 void GPIO_Configuration(void);

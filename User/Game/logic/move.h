@@ -18,5 +18,7 @@ uint8_t  Move_CheckWin(void);
 void     Move_Undo(const MoveRecord *rec);
 void     Move_GetDirtyRects(int8_t dx, int8_t dy, MoveResult res,
                             uint8_t *out, uint8_t *count);
+uint8_t  Move_CountRemaining(void);
+uint8_t  Move_CountTotal(void);
 
 #endif

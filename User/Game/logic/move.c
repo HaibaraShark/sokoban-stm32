@@ -106,3 +106,36 @@ void Move_GetDirtyRects(int8_t dx, int8_t dy, MoveResult res,
     }
     *count = i / 2;
 }
+
+/* 统计未在目标上的箱子数 */
+uint8_t Move_CountRemaining(void)
+{
+    uint8_t w, h, x, y, cnt;
+    w = g_map.width;
+    h = g_map.height;
+    cnt = 0;
+    for (y = 0; y < h; y++) {
+        for (x = 0; x < w; x++) {
+            if (g_map.entities[y * w + x] == ENT_BOX &&
+                g_map.ground[y * w + x] != GROUND_TARGET) {
+                cnt++;
+            }
+        }
+    }
+    return cnt;
+}
+
+/* 统计总箱子数 */
+uint8_t Move_CountTotal(void)
+{
+    uint8_t w, h, x, y, cnt;
+    w = g_map.width;
+    h = g_map.height;
+    cnt = 0;
+    for (y = 0; y < h; y++) {
+        for (x = 0; x < w; x++) {
+            if (g_map.entities[y * w + x] == ENT_BOX) cnt++;
+        }
+    }
+    return cnt;
+}

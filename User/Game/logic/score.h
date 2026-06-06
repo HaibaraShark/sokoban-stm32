@@ -14,4 +14,8 @@ void Score_SaveBest(uint8_t level);
 void Score_Load(void);
 void Score_Save(void);
 
+/* 设置存取 (BKP_DR17) */
+void Settings_Load(void);
+void Settings_Save(void);
+
 #endif

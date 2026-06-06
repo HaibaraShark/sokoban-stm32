@@ -120,6 +120,7 @@ static InputEvent UART_Parse(uint8_t ch)
     case 'U': return INPUT_UNDO;
     case 'R': return INPUT_RESET;
     case 'M': return INPUT_MENU;
+    case 'O': return INPUT_SETTING;  /* 设置 */
     case ' ':                       /* 空格 = 确认 */
     case '\r':
     case '\n': return INPUT_CONFIRM;

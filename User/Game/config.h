@@ -37,6 +37,33 @@
 /* ===== 测试模式: 注释掉即为正常闯关模式 ===== */
 #define TEST_MODE       /* 开启后选关页面所有关卡解锁, 可任意跳关 */
 
+/* ===== 星级评价: 每关最优步数 (par) ===== */
+static const uint16_t g_level_par[MAX_LEVELS] = {
+    8,   /* Lv1  First Push    2箱 8x8  */
+    10,  /* Lv2  Side Step     2箱 9x7  */
+    12,  /* Lv3  Corner        2箱 8x8  */
+    15,  /* Lv4  Line Up       3箱 9x7  */
+    18,  /* Lv5  Split         3箱 9x8  */
+    20,  /* Lv6  Through       3箱 10x8 */
+    22,  /* Lv7  Square        4箱 9x9  */
+    25,  /* Lv8  Rooms         4箱 10x9 */
+    28,  /* Lv9  Cross Path    4箱 10x9 */
+    30,  /* Lv10 ZigZag        4箱 11x9 */
+    35,  /* Lv11 Maze          5箱 11x10*/
+    38,  /* Lv12 Warehouse I   5箱 11x10*/
+    42,  /* Lv13 Labyrinth     5箱 12x10*/
+    45,  /* Lv14 Castle        5箱 12x10*/
+    50   /* Lv15 Fortress      6箱 12x10*/
+};
+
+/* 星级判定: steps<=par→3星, steps<=par*1.5→2星, 否则1星 */
+#define STARS_GET(steps, lv) \
+    ((steps) <= g_level_par[lv] ? 3 : (steps) <= g_level_par[lv] * 3 / 2 ? 2 : 1)
+
+/* ===== 电机振动时长 (ms) ===== */
+#define VIB_PUSH     50
+#define VIB_WIN      200
+
 /* ===== FSM 状态 ===== */
 typedef enum {
     STATE_SPLASH = 0,
@@ -44,6 +71,7 @@ typedef enum {
     STATE_GAME,
     STATE_LEVEL_SELECT,
     STATE_HELP,
+    STATE_SETTINGS,
     STATE_WIN,
     STATE_COUNT
 } AppState;
@@ -77,8 +105,17 @@ typedef enum {
     INPUT_UNDO,
     INPUT_RESET,
     INPUT_MENU,
-    INPUT_CONFIRM
+    INPUT_CONFIRM,
+    INPUT_SETTING
 } InputEvent;
+
+/* ===== 设置 ===== */
+typedef struct {
+    uint8_t sound_enabled;     /* 1=开, 0=关 */
+    uint8_t vibration_enabled; /* 1=开, 0=关 */
+} GameSettings;
+
+extern GameSettings g_settings;
 
 /* ===== 颜色 (RGB565) ===== */
 #define COLOR_WHITE     0xFFFF
@@ -96,5 +133,23 @@ typedef enum {
 #define COLOR_ORANGE    0xFC00
 #define COLOR_DARKBLUE  0x01CF
 #define COLOR_WHITESMOKE 0xD69A
+
+/* 新 UI 配色 */
+#define COLOR_CHARCOAL   0x1082  /* 深炭灰 (信息栏底色) */
+#define COLOR_CARD       0x18E3  /* 卡片底色 */
+#define COLOR_CARDLIGHT  0x2965  /* 卡片亮色 */
+#define COLOR_WARMGRAY   0xAD55  /* 暖灰石材 (墙体) */
+#define COLOR_BRICKLINE  0x8C51  /* 砖缝线 */
+#define COLOR_STONEHI    0xCE79  /* 石材高光 */
+#define COLOR_STONELO    0x738E  /* 石材阴影 */
+#define COLOR_LIGHTRED   0xF9AE  /* 浅红 (目标发光) */
+#define COLOR_GOLD       0xFD20  /* 金色 (通关卡片) */
+#define COLOR_DARKGOLD   0xB420  /* 暗金 (箱子阴影) */
+#define COLOR_LIGHTGOLD  0xFE80  /* 亮金 (箱子高光) */
+#define COLOR_LIGHTBLUE  0x041F  /* 亮蓝 (玩家高光) */
+#define COLOR_PLAYERBODY 0x0018  /* 深蓝 (玩家身体) */
+#define COLOR_HINT       0x630C  /* 暗灰提示文字 */
+#define COLOR_DIVIDER    0x3186  /* 分隔线 */
+#define COLOR_LOGOBG     0x0210  /* 顶栏深色 */
 
 #endif

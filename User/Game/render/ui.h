@@ -17,5 +17,7 @@ void UI_DrawProgressBar(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                         uint8_t pct);
 /* 绘制关卡缩略图网格 (选关界面) */
 void UI_DrawLevelGrid(uint8_t page, uint8_t cursor, uint8_t unlocked);
+/* 只重绘网格中的单个格子 (用于去闪烁增量更新) */
+void UI_DrawLevelCell(uint8_t id, uint8_t cursor, uint8_t unlocked);
 
 #endif
