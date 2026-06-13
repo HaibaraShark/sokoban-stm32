@@ -1,7 +1,8 @@
-#include "audio.h"
+﻿#include "audio.h"
 #include "hw_config.h"
 #include "stm32f10x.h"
 #include <stddef.h>
+#include "bgm.h"
 
 /* DWT 寄存器 (与 delay.c 一致) */
 typedef struct {
@@ -38,6 +39,11 @@ static const AudioSeg s_win_segs[4] = {
     {784, 988, 70, 45},
     {988, 1047, 70, 45}
 };
+/* 撞墙音效: 两个短促脉冲 */
+static const AudioSeg s_blocked_segs[2] = {
+    {100, 100, 30, 30},
+    {100, 100, 30, 30}
+};
 
 /* ---- 全局设置 (在 main.c 定义) ---- */
 extern GameSettings g_settings;
@@ -54,7 +60,6 @@ void Audio_Init(void)
  */
 void Audio_Play(SoundEffect sfx)
 {
-    uint8_t duty_val;
 
     if (g_settings.sound_enabled == 0) return;
 
@@ -82,12 +87,9 @@ void Audio_Play(SoundEffect sfx)
         break;
 
     case SOUND_BLOCKED:
-        /* 双短音: 分两段 */
-        g_audio.freq1  = 100;
-        g_audio.freq2  = 100;
-        g_audio.dur_ms = 30;
-        g_audio.duty   = 30;
-        g_audio.total_us = 30000;
+        g_audio.segs      = s_blocked_segs;
+        g_audio.seg_count = 2;
+        g_audio.total_us  = 60000;
         break;
 
     case SOUND_WIN:
@@ -124,15 +126,8 @@ void Audio_Play(SoundEffect sfx)
         g_audio.active = 0;
         return;
     }
-
-    /* SOUND_BLOCKED 特殊处理: 第一段结束后补第二段 */
-    if (sfx == SOUND_BLOCKED) {
-        duty_val = 30;
-    } else {
-        duty_val = g_audio.duty;
-    }
-    (void)duty_val; /* 保留兼容 */
 }
+
 
 /*
  * 每帧调用: 根据 DWT 时间戳计算当前波形相位, 设置 BEEP
@@ -145,7 +140,10 @@ void Audio_Update(void)
     uint32_t period_us, phase_us;
     uint8_t  cur_duty;
 
-    if (!g_audio.active) return;
+    if (!g_audio.active) {
+        BGM_Update();
+        return;
+    }
 
     now = DWT_PTR->CYCCNT;
     elapsed_us = (now - g_audio.start_cycles) / (SystemCoreClock / 1000000);

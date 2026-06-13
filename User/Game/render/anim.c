@@ -1,15 +1,27 @@
-#include "anim.h"
+﻿#include "anim.h"
 #include "lcd.h"
 #include "font.h"
 #include "delay.h"
 #include "hw_config.h"
+#include "../drv/audio.h"
+#include "../render/ui.h"
 
 /* ---- 内部工具 ---- */
+/* ---- 非阻塞反馈友好的延时: 等待期间继续驱动音频/电机 ---- */
+void Anim_DelayWithAudio(uint16_t ms)
+{
+    while (ms--) {
+        Delay_ms(1);
+        Audio_Update();
+        Motor_Update();
+    }
+}
+
 
 static void Anim_Flash(uint16_t color, uint16_t dur_ms)
 {
     LCD_Fill(0, 0, SCREEN_W - 1, SCREEN_H - 1, color);
-    Delay_ms(dur_ms);
+    Anim_DelayWithAudio(dur_ms);
     LCD_Fill(0, 0, SCREEN_W - 1, SCREEN_H - 1, COLOR_BLACK);
 }
 
@@ -42,7 +54,7 @@ static void Anim_ShockWave(uint16_t cx, uint16_t cy,
         Draw_Circle(cx, cy, COLOR_CYAN, (uint8_t)(r + 12));
 
         pr = r;
-        Delay_ms(delay_ms);
+        Anim_DelayWithAudio(delay_ms);
     }
 
     /* 擦除最后一帧 */
@@ -86,7 +98,7 @@ void Anim_WinSequence(uint8_t level, uint32_t steps, uint32_t best)
         Show_Str(20, (uint16_t)new_y, COLOR_YELLOW, COLOR_BLACK,
                  (uint8_t *)"LEVEL CLEAR!", 32, 0);
         prev_y = new_y;
-        Delay_ms(25);
+        Anim_DelayWithAudio(25);
     }
 
     /* ===== 阶段3: 步数滚动 + 记录 (0.5s) ===== */
@@ -99,7 +111,7 @@ void Anim_WinSequence(uint8_t level, uint32_t steps, uint32_t best)
         POINT_COLOR = COLOR_WHITE;
         BACK_COLOR  = COLOR_BLACK;
         LCD_ShowNum((uint16_t)(lx + 90), 100, display_steps, 5, 16);
-        Delay_ms(20);
+        Anim_DelayWithAudio(20);
     }
 
     /* 最佳记录 */
@@ -135,12 +147,12 @@ void Anim_WinSequence(uint8_t level, uint32_t steps, uint32_t best)
             uint16_t c;
             c = (frame & 1) ? COLOR_RED : COLOR_YELLOW;
             Font_DrawCenter(0, 205, SCREEN_W, "NEW RECORD!", c, COLOR_BLACK, 16);
-            Delay_ms(80);
+            Anim_DelayWithAudio(80);
         }
     }
 
     /* ===== 阶段4: 短暂停留 (0.5s) ===== */
-    Delay_ms(500);
+    Anim_DelayWithAudio(500);
 }
 
 /* ---- 启动画面 ---- */
@@ -161,15 +173,15 @@ void Anim_BootLogo(void)
     for (i = 0; i < 7; i++) {
         for (j = 0; j <= i; j++) buf[j] = "SOKOBAN"[j];
         buf[i + 1] = '\0';
-        Show_Str(70, 50, COLOR_CYAN, COLOR_BLACK, (uint8_t *)buf, 32, 0);
-        Delay_ms(60);
+        Show_Str(70, 50, COLOR_BOOT_TITLE, COLOR_BLACK, (uint8_t *)buf, 32, 0);
+        Anim_DelayWithAudio(60);
     }
 
     /* 副标题淡入 */
     for (i = 0; i < 8; i++) {
         Show_Str(60, 95, gray[i], COLOR_BLACK,
                  (uint8_t *)"Push the Box", 24, 0);
-        Delay_ms(30);
+        Anim_DelayWithAudio(30);
     }
 
     /* 型号 */
@@ -196,7 +208,14 @@ void Anim_BootLogo(void)
         if (fill_x > bar_x) {
             uint16_t bar_color;
             bar_color = (p < 50) ? COLOR_BLUE : COLOR_CYAN;
+            if (prev_fill_x > bar_x) UI_DrawButterflyMini(prev_fill_x, 173, COLOR_BLACK);
+            /* 蝴蝶跟随进度条前进 */
+            if (p >= 10) UI_DrawButterflyMini(fill_x, 173, COLOR_WING);
             LCD_Fill(bar_x + 1, 181, fill_x, 189, bar_color);
+        /* 圆角端点 */
+        if (fill_x > bar_x + 2) {
+            Draw_Circle(fill_x, 185, bar_color, 4);
+        }
         }
 
         /* 新光点 */
@@ -213,7 +232,7 @@ void Anim_BootLogo(void)
         LED5(((p + 8) % 10 < 2) ? 0 : 1);
 
         prev_fill_x = fill_x;
-        Delay_ms(10);
+        Anim_DelayWithAudio(10);
     }
 
     /* 擦除最后光点 */
@@ -241,6 +260,6 @@ void Anim_GameEnter(void)
         if (GAME_AREA_W - 1 - bar_w < GAME_AREA_W - 1)
             LCD_Fill(GAME_AREA_W - 1 - bar_w, 0,
                      GAME_AREA_W - 1, GAME_AREA_H - 1, COLOR_BLACK);
-        Delay_ms(15);
+        Anim_DelayWithAudio(15);
     }
 }

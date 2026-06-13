@@ -1,4 +1,4 @@
-#include "menu.h"
+﻿#include "menu.h"
 #include "app.h"
 #include "game.h"
 #include "select.h"
@@ -7,6 +7,7 @@
 #include "../render/ui.h"
 #include "../logic/score.h"
 #include "../drv/audio.h"
+#include "../drv/bgm.h"
 #include "hw_config.h"
 
 static uint8_t g_menu_cursor;
@@ -22,16 +23,17 @@ static const char *g_menu_items[] = {
     ""
 };
 #define MENU_COUNT   4
-#define ITEM_Y_BASE  80
-#define ITEM_GAP     35    /* 按钮间距 */
-#define ITEM_W       210
-#define ITEM_H       30
+#define ITEM_Y_BASE  95
+#define ITEM_GAP     27
+#define ITEM_W       180
+#define ITEM_H       36
 
 void Menu_Enter(void)
 {
     g_menu_cursor    = 0;
     g_menu_prev      = 0;
     g_menu_need_full = 1;
+    BGM_Play(g_menu_bgm, g_menu_bgm_len, 1);
 }
 
 static void Menu_StartGame(void)
@@ -44,13 +46,12 @@ static void Menu_StartGame(void)
     g_state = STATE_GAME;
 }
 
-/* 只重绘单个菜单项 */
 static void Menu_DrawItem(uint8_t idx)
 {
     uint16_t y  = ITEM_Y_BASE + idx * ITEM_GAP;
     uint16_t fg = (idx == g_menu_cursor) ? COLOR_YELLOW : COLOR_WHITE;
     uint16_t bg = (idx == g_menu_cursor) ? COLOR_CARDLIGHT : COLOR_CARD;
-    UI_DrawButton(55, y, ITEM_W, ITEM_H, g_menu_items[idx], fg, bg,
+    UI_DrawButton(70, y, ITEM_W, ITEM_H, g_menu_items[idx], fg, bg,
                   (idx == g_menu_cursor));
 }
 
@@ -84,47 +85,48 @@ void Menu_Update(InputEvent ev)
 void Menu_Draw(void)
 {
     uint8_t i;
-    uint16_t cx;
 
     if (g_menu_need_full) {
-        /* 首次绘制: 整个页面 */
         LCD_Fill(0, 0, SCREEN_W - 1, SCREEN_H - 1, COLOR_BLACK);
 
-        /* Logo 图标 */
-        cx = SCREEN_W / 2;
+        /* 蝴蝶装饰 (左上角) */
+        UI_DrawButterflyMini(10, 14, COLOR_WING);
+        UI_DrawButterflyMini(22, 8, COLOR_WING_LIGHT);
+
+        /* Logo 箱子图标 */
         {
-            uint16_t lx, ly, ls;
-            ls = 8;
-            lx = cx - ls;
-            ly = 8;
-            LCD_Fill(lx, ly, lx + ls * 2, ly + ls * 2, COLOR_GOLD);
+            uint16_t lx = 154, ly = 6;
+            LCD_Fill(lx, ly, lx + 11, ly + 11, COLOR_GOLD);
             POINT_COLOR = COLOR_DARKGOLD;
-            LCD_DrawRectangle(lx, ly, lx + ls * 2, ly + ls * 2);
-            LCD_DrawLine(lx, ly, lx + ls * 2, ly + ls * 2);
-            LCD_DrawLine(lx, ly + ls * 2, lx + ls * 2, ly);
+            LCD_DrawRectangle(lx, ly, lx + 11, ly + 11);
+            LCD_DrawLine(lx, ly, lx + 11, ly + 11);
+            LCD_DrawLine(lx, ly + 11, lx + 11, ly);
         }
 
+        /* 蝴蝶装饰 (右上角) */
+        UI_DrawButterflyMini(286, 8, COLOR_WING_LIGHT);
+        UI_DrawButterflyMini(298, 14, COLOR_WING);
+
         /* 标题 */
-        Show_Str(56, 34, COLOR_CYAN, COLOR_BLACK,
+        Show_Str(40, 28, COLOR_CYAN, COLOR_BLACK,
                  (uint8_t *)"S O K O B A N", 32, 0);
 
-        /* 副标题 (缩小) */
-        Show_Str(102, 66, COLOR_WHITE, COLOR_BLACK,
-                 (uint8_t *)"Push Box", 12, 0);
+        POINT_COLOR = COLOR_DIVIDER;
+        LCD_DrawLine(50, 62, SCREEN_W - 50, 62);
 
-        /* 所有菜单项 */
+        Show_Str(108, 66, COLOR_WING, COLOR_BLACK,
+                 (uint8_t *)"\xCD\xC6\xCF\xE4\xD7\xD3", 16, 0);
+
         for (i = 0; i < MENU_COUNT; i++) {
             Menu_DrawItem(i);
         }
 
-        /* 版权 */
-        Show_Str(35, 226, COLOR_HINT, COLOR_BLACK,
-                 (uint8_t *)"NUAA Embedded Sys Design", 12, 0);
+        Show_Str(25, 228, COLOR_HINT, COLOR_BLACK,
+                 (uint8_t *)"NUAA Embedded 2025", 12, 0);
 
         g_menu_need_full = 0;
         g_menu_prev      = g_menu_cursor;
     } else {
-        /* 增量绘制: 只重绘变化的两个按钮 */
         if (g_menu_prev != g_menu_cursor) {
             Menu_DrawItem(g_menu_prev);
             Menu_DrawItem(g_menu_cursor);

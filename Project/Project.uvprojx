@@ -612,6 +612,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\Game\render\anim.c</FilePath>
             </File>
+            <File>
+              <FileName>particle.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\render\particle.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -621,6 +626,11 @@
               <FileName>audio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\Game\drv\audio.c</FilePath>
+            </File>
+            <File>
+              <FileName>bgm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Game\drv\bgm.c</FilePath>
             </File>
           </Files>
         </Group>

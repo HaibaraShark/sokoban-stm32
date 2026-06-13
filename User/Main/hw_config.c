@@ -95,9 +95,9 @@ void NVIC_Configuration(void)
 /* ---- 蜂鸣器: TIM2 CH1 PWM (PC0 没有TIM通道, 用软件PWM或直接用TIM3) ---- */
 /* PC0 无硬件TIM通道, 这里用TIM3_CH3(PB0)或直接用PB0. 暂时用PB0做PWM蜂鸣器.   */
 /* 如果你的板子 PC0 是蜂鸣器, 此处用位带操作做软件 PWM (在主循环或中断里翻转)  */
+/* ---- 蜂鸣器: PC0 GPIO 软件方波 (非阻塞 DWT 驱动) ---- */
 void BEEP_Init(void)
 {
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 }
 
 /* ---- 电机振动: PB8(IA) + PB9(IB) 推挽输出 ---- */

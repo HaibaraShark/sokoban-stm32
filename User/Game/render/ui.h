@@ -1,4 +1,4 @@
-#ifndef __GAME_UI_H
+﻿#ifndef __GAME_UI_H
 #define __GAME_UI_H
 
 #include "../config.h"
@@ -19,5 +19,10 @@ void UI_DrawProgressBar(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 void UI_DrawLevelGrid(uint8_t page, uint8_t cursor, uint8_t unlocked);
 /* 只重绘网格中的单个格子 (用于去闪烁增量更新) */
 void UI_DrawLevelCell(uint8_t id, uint8_t cursor, uint8_t unlocked);
+
+
+/* 蝴蝶图标 */
+void UI_DrawButterfly(uint16_t x, uint16_t y, uint16_t wing_color, uint16_t body_color, uint8_t size);
+void UI_DrawButterflyMini(uint16_t x, uint16_t y, uint16_t color);
 
 #endif

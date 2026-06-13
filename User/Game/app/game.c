@@ -1,4 +1,4 @@
-#include "game.h"
+﻿#include "game.h"
 #include "app.h"
 #include "menu.h"
 #include "lcd.h"
@@ -11,6 +11,8 @@
 #include "../render/anim.h"
 #include "../data/levels.h"
 #include "../drv/audio.h"
+#include "../drv/bgm.h"
+#include "../render/particle.h"
 #include "stm32f10x_it.h"
 
 static uint8_t     g_cur_level;
@@ -21,9 +23,11 @@ static const LevelDef *g_cur_def;
 
 /* 连击追踪 */
 static uint32_t g_last_move_tick;
+static uint32_t g_level_start_tick;    /* 关卡开始时刻 */
 static uint8_t  g_combo;
 
 extern volatile uint32_t g_systick;
+uint32_t g_level_time_s;                 /* 当前用时 (秒) */
 
 /* ---- 非阻塞 LED 状态机 ---- */
 #define LED_MODE_IDLE   0
@@ -152,6 +156,9 @@ void Game_Enter(uint8_t level_id)
     g_game_running = 1;
 
     Input_Flush(); Map_Load(g_cur_def);
+    g_level_start_tick = g_systick;
+    Particle_Init();
+    g_level_time_s = 0;
     Undo_Init();
     Score_Reset();
     Tile_GetOffset(g_cur_def->width, g_cur_def->height, &g_ox, &g_oy, &g_ts);
@@ -159,6 +166,7 @@ void Game_Enter(uint8_t level_id)
     /* 全量绘制 */
     Game_Draw();
     UpdateLEDs();
+    BGM_Play(g_game_bgm, g_game_bgm_len, 1);
 }
 
 uint8_t Game_IsRunning(void)
@@ -172,6 +180,10 @@ void Game_Update(InputEvent ev)
     MoveResult res;
 
     if (!g_game_running) return;
+
+
+    /* 更新计时 */
+    g_level_time_s = (g_systick - g_level_start_tick) / 1000;
 
     switch (ev) {
     case INPUT_UP:
@@ -199,6 +211,12 @@ void Game_Update(InputEvent ev)
             if (res == MOVE_BOX_OK) {
                 Motor_Pulse(100, 0, 1);
                 LED_StartFlash(1, 80);
+                {
+                    uint8_t _bx = g_map.player_x + dx;
+                    uint8_t _by = g_map.player_y + dy;
+                    Particle_Spawn(g_ox + _bx * g_ts + g_ts/2,
+                                   g_oy + _by * g_ts + g_ts/2, 5, COLOR_LGRAY);
+                }
             }
 
             /* 连击检测 */
@@ -240,8 +258,8 @@ void Game_Update(InputEvent ev)
                 }
 
                 /* 更新信息栏步数 */
-                Tile_UpdateInfo(g_cur_level, g_cur_def->name,
-                                g_steps, g_best_steps[g_cur_level]);
+                Tile_UpdateValues(g_steps, g_best_steps[g_cur_level],
+                                  Move_CountRemaining(), Move_CountTotal());
             }
 
             /* 胜利? */
@@ -254,6 +272,7 @@ void Game_Update(InputEvent ev)
                 }
                 LED_StartChase(1, 2);
                 Score_SaveBest(g_cur_level);
+                Score_SaveBestTime(g_cur_level, (uint16_t)g_level_time_s);
                 Anim_WinSequence(g_cur_level, g_steps,
                                  g_best_steps[g_cur_level]);
 
@@ -269,6 +288,7 @@ void Game_Update(InputEvent ev)
                              (uint8_t *)"CLEARED!", 24, 0);
                     Show_Str(70, 155, COLOR_GREEN, COLOR_CHARCOAL,
                              (uint8_t *)"Congrats!", 16, 0);
+                    BGM_Stop();
                     Delay_ms(3000);
                     Input_Flush(); Menu_Enter();
                     g_state = STATE_MENU;
@@ -312,24 +332,27 @@ void Game_Update(InputEvent ev)
 
                 Score_SubStep();
                 UpdateLEDs();
-                Tile_UpdateInfo(g_cur_level, g_cur_def->name,
-                                g_steps, g_best_steps[g_cur_level]);
+                Tile_UpdateValues(g_steps, g_best_steps[g_cur_level],
+                                  Move_CountRemaining(), Move_CountTotal());
             }
         }
         break;
 
     case INPUT_RESET:
+        Score_AddReset();
         Map_Reset(g_cur_def);
         Undo_Clear();
         Score_Reset();
         UpdateLEDs();
         Tile_DrawMap(g_ox, g_oy, g_ts);
-        Tile_UpdateInfo(g_cur_level, g_cur_def->name,
-                        g_steps, g_best_steps[g_cur_level]);
+                Tile_UpdateValues(g_steps, g_best_steps[g_cur_level],
+                                  Move_CountRemaining(), Move_CountTotal());
         break;
 
     case INPUT_MENU:
-        Input_Flush(); Menu_Enter();
+        Input_Flush();
+        BGM_Play(g_menu_bgm, g_menu_bgm_len, 1);
+        Menu_Enter();
         g_state = STATE_MENU;
         g_game_running = 0;
         break;
@@ -342,7 +365,6 @@ void Game_Update(InputEvent ev)
 void Game_Draw(void)
 {
     Tile_FillInfoPanel();
-    Tile_DrawMap(g_ox, g_oy, g_ts);
     Tile_UpdateInfo(g_cur_level, g_cur_def->name, g_steps,
                     g_best_steps[g_cur_level]);
 }

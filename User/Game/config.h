@@ -1,4 +1,4 @@
-#ifndef __GAME_CONFIG_H
+﻿#ifndef __GAME_CONFIG_H
 #define __GAME_CONFIG_H
 
 #include "stm32f10x.h"
@@ -138,9 +138,9 @@ extern GameSettings g_settings;
 #define COLOR_CHARCOAL   0x1082  /* 深炭灰 (信息栏底色) */
 #define COLOR_CARD       0x18E3  /* 卡片底色 */
 #define COLOR_CARDLIGHT  0x2965  /* 卡片亮色 */
-#define COLOR_WARMGRAY   0xAD55  /* 暖灰石材 (墙体) */
+#define COLOR_WARMGRAY   0xA514  /* 暖灰石材 (墙体) */
 #define COLOR_BRICKLINE  0x8C51  /* 砖缝线 */
-#define COLOR_STONEHI    0xCE79  /* 石材高光 */
+#define COLOR_STONEHI    0xC618  /* 石材高光 */
 #define COLOR_STONELO    0x738E  /* 石材阴影 */
 #define COLOR_LIGHTRED   0xF9AE  /* 浅红 (目标发光) */
 #define COLOR_GOLD       0xFD20  /* 金色 (通关卡片) */
@@ -150,6 +150,12 @@ extern GameSettings g_settings;
 #define COLOR_PLAYERBODY 0x0018  /* 深蓝 (玩家身体) */
 #define COLOR_HINT       0x630C  /* 暗灰提示文字 */
 #define COLOR_DIVIDER    0x3186  /* 分隔线 */
+#define COLOR_LABEL      0xA514  /* 标签文字 (浅灰) */
+#define COLOR_BOXBORDER  0x8A20  /* 箱子深边框 */
+#define COLOR_BOXCROSS   0xD500  /* 箱子十字纹 */
+#define COLOR_BOOT_TITLE 0x04FF  /* 启动标题青色 */
+#define COLOR_WING      0x981F  /* 蝴蝶翅紫色 */
+#define COLOR_WING_LIGHT 0xB85F  /* 蝴蝶翅亮紫 */
 #define COLOR_LOGOBG     0x0210  /* 顶栏深色 */
 
 #endif

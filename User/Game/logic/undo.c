@@ -9,7 +9,6 @@ void Undo_Init(void)
 {
     g_undo_head  = 0;
     g_undo_count = 0;
-    memset(g_undo_stack, 0, sizeof(g_undo_stack));
 }
 
 void Undo_Push(const MoveRecord *rec)

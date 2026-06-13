@@ -1,8 +1,10 @@
-#include "tile.h"
+﻿#include "tile.h"
 #include "lcd.h"
 #include "font.h"
+#include "../render/ui.h"
 #include "../logic/map.h"
 #include "../logic/move.h"
+extern uint32_t g_level_time_s;
 
 /* ---- 计算瓦片尺寸与偏移 (居中) ---- */
 uint8_t Tile_GetSize(uint8_t map_w, uint8_t map_h)
@@ -42,7 +44,7 @@ void Tile_Draw(uint8_t gx, uint8_t gy, uint8_t ground, uint8_t entity,
         LCD_Fill(x, y, xs, ys, COLOR_WARMGRAY);
 
         /* 砖缝 (横线 + 交错竖线) */
-        if (ts >= 14) {
+        if (ts >= 16) {
             POINT_COLOR = COLOR_BRICKLINE;
             for (seam = 4; seam < ts; seam += 5) {
                 LCD_DrawLine(x, y + seam, xs, y + seam);
@@ -216,8 +218,8 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
     LCD_Fill(INFO_X, INFO_Y, SCREEN_W - 1, SCREEN_H - 1, COLOR_CHARCOAL);
 
     /* 顶栏 */
-    LCD_Fill(INFO_X, 0, SCREEN_W - 1, 23, COLOR_LOGOBG);
-    Show_Str(INFO_X + 12, 4, COLOR_WHITE, COLOR_LOGOBG,
+    LCD_Fill(INFO_X, 0, SCREEN_W - 1, 23, COLOR_BLACK);
+    Show_Str(INFO_X + 12, 4, COLOR_WHITE, COLOR_BLACK,
              (uint8_t *)"SOKOBAN", 16, 0);
 
     /* 分隔线 */
@@ -231,24 +233,27 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
     Font_DrawNum(INFO_X + 28, y, level_id + 1, 2, 16, COLOR_WHITE, COLOR_CHARCOAL);
 
     /* 关卡名 */
-    y += 19;
+    y += 18;
     Show_Str(INFO_X + 5, y, COLOR_GRAY, COLOR_CHARCOAL,
              (uint8_t *)name, 12, 0);
 
     /* 分隔线 */
-    y += 15;
+    y += 14;
     POINT_COLOR = COLOR_DIVIDER;
     LCD_DrawLine(INFO_X + 5, y, SCREEN_W - 6, y);
 
     /* 步数 */
-    y += 7;
+    y += 6;
     Show_Str(INFO_X + 5, y, COLOR_GRAY, COLOR_CHARCOAL,
              (uint8_t *)"Steps", 12, 0);
+    Show_Str(INFO_X + 46, y, COLOR_GRAY, COLOR_CHARCOAL,
+             (uint8_t *)"Time", 12, 0);
     y += 14;
     Font_DrawNum(INFO_X + 5, y, steps, 5, 16, COLOR_WHITE, COLOR_CHARCOAL);
+    Font_DrawNum(INFO_X + 46, y, g_level_time_s, 3, 12, COLOR_WHITE, COLOR_CHARCOAL);
 
     /* 最佳 */
-    y += 22;
+    y += 20;
     Show_Str(INFO_X + 5, y, COLOR_GRAY, COLOR_CHARCOAL,
              (uint8_t *)"Best", 12, 0);
     y += 14;
@@ -259,7 +264,7 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
                  (uint8_t *)"---", 12, 0);
 
     /* 剩余箱子 */
-    y += 22;
+    y += 20;
     Show_Str(INFO_X + 5, y, COLOR_GRAY, COLOR_CHARCOAL,
              (uint8_t *)"Left", 12, 0);
     left  = Move_CountRemaining();
@@ -271,12 +276,17 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
     Font_DrawNum(INFO_X + 24, y, total, 1, 16, COLOR_WHITE, COLOR_CHARCOAL);
 
     /* 分隔线 */
-    y += 20;
+    y += 18;
     POINT_COLOR = COLOR_DIVIDER;
     LCD_DrawLine(INFO_X + 5, y, SCREEN_W - 6, y);
 
+    /* 蝴蝶装饰 */
+    UI_DrawButterflyMini(INFO_X + 30, y - 5, COLOR_WING_LIGHT);
+    POINT_COLOR = COLOR_DIVIDER;
+
+
     /* 操作按钮 */
-    y += 6;
+    y += 4;
     bw = 66;
     bx = INFO_X + (INFO_W - bw) / 2;
 
@@ -297,7 +307,7 @@ void Tile_UpdateInfo(uint8_t level_id, const char *name,
     LCD_DrawLine(INFO_X + 5, y, SCREEN_W - 6, y);
 
     /* 按键提示 (紧凑) */
-    y += 4;
+    y += 2;
     Show_Str(INFO_X + 2, y, COLOR_HINT, COLOR_CHARCOAL,
              (uint8_t *)"WASD Move", 12, 0);
     y += 12;
@@ -319,4 +329,28 @@ void Tile_DrawSelectBorder(uint8_t gx, uint8_t gy,
     POINT_COLOR = color;
     LCD_DrawRectangle(x - 1, y - 1, x + ts, y + ts);
     LCD_DrawRectangle(x - 2, y - 2, x + ts + 1, y + ts + 1);
+}
+
+/* ---- 蝴蝶图标 (转移至 ui.c) ---- */
+
+
+/* ---- 增量更新信息栏数值 (避免全屏重绘) ---- */
+void Tile_UpdateValues(uint32_t steps, uint32_t best, uint8_t left, uint8_t total)
+{
+    LCD_Fill(INFO_X + 5, 82, INFO_X + 5 + 40, 82 + 16, COLOR_CHARCOAL);
+    Font_DrawNum(INFO_X + 5, 82, steps, 5, 16, COLOR_WHITE, COLOR_CHARCOAL);
+
+    LCD_Fill(INFO_X + 46, 82, INFO_X + 46 + 24, 82 + 12, COLOR_CHARCOAL);
+    Font_DrawNum(INFO_X + 46, 82, g_level_time_s, 3, 12, COLOR_WHITE, COLOR_CHARCOAL);
+
+    LCD_Fill(INFO_X + 5, 116, INFO_X + 5 + 40, 116 + 16, COLOR_CHARCOAL);
+    if (best > 0)
+        Font_DrawNum(INFO_X + 5, 116, best, 5, 16, COLOR_WHITE, COLOR_CHARCOAL);
+    else
+        Show_Str(INFO_X + 5, 116, COLOR_GRAY, COLOR_CHARCOAL, (uint8_t *)"---", 12, 0);
+
+    LCD_Fill(INFO_X + 5, 150, INFO_X + 5 + 10, 150 + 16, COLOR_CHARCOAL);
+    Font_DrawNum(INFO_X + 5, 150, left, 1, 16, COLOR_WHITE, COLOR_CHARCOAL);
+    LCD_Fill(INFO_X + 24, 150, INFO_X + 24 + 10, 150 + 16, COLOR_CHARCOAL);
+    Font_DrawNum(INFO_X + 24, 150, total, 1, 16, COLOR_WHITE, COLOR_CHARCOAL);
 }

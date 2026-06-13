@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =====================================================
  *  推箱子 (Sokoban) - STM32F107VCT6
  *  NUAA_CM3_107 实验开发板  |  ILI9341 TFT 320x240
@@ -19,6 +19,8 @@
 #include "../Game/render/font.h"
 #include "../Game/logic/score.h"
 #include "../Game/drv/audio.h"
+#include "../Game/drv/bgm.h"
+#include "../Game/render/particle.h"
 
 extern volatile uint32_t g_systick;
 
@@ -209,6 +211,8 @@ int main(void)
             }
             break;
         case STATE_GAME:
+            Particle_Update();
+            Particle_Draw();
             Game_Update(ev);
             break;
         case STATE_LEVEL_SELECT:
@@ -222,6 +226,7 @@ int main(void)
                 set_drawn = 0;
                 Settings_Update(ev);
             } else if (!set_drawn) {
+                BGM_Stop();
                 Settings_Draw();
                 set_drawn = 1;
             }
@@ -234,8 +239,9 @@ int main(void)
                 g_state = STATE_MENU;
                 Menu_Draw();
             } else if (!help_drawn) {
+                BGM_Stop();
                 Help_Draw();
-                help_drawn = 1;
+                    help_drawn = 1;
             }
             break;
         default:

@@ -1,4 +1,4 @@
-#include "select.h"
+﻿#include "select.h"
 #include "app.h"
 #include "menu.h"
 #include "game.h"
@@ -6,6 +6,7 @@
 #include "../render/ui.h"
 #include "../logic/score.h"
 #include "../drv/audio.h"
+#include "../drv/bgm.h"
 #include "stm32f10x_it.h"
 #include <string.h>
 
@@ -17,7 +18,6 @@ static uint8_t g_sel_need_full;
 
 void Select_Enter(void)
 {
-    uint8_t i;
     g_sel_cursor    = 0;
     g_sel_page      = 0;
     g_sel_prev      = 0;
@@ -25,14 +25,18 @@ void Select_Enter(void)
 #ifdef TEST_MODE
     g_max_unlocked = MAX_LEVELS - 1;
 #else
-    for (i = 0; i < MAX_LEVELS; i++) {
-        if (g_best_steps[i] == 0) {
-            g_max_unlocked = i;
-            return;
+    {
+        uint8_t i;
+        for (i = 0; i < MAX_LEVELS; i++) {
+            if (g_best_steps[i] == 0) {
+                g_max_unlocked = i;
+                return;
+            }
         }
+        g_max_unlocked = MAX_LEVELS - 1;
     }
-    g_max_unlocked = MAX_LEVELS - 1;
 #endif
+    BGM_Play(g_menu_bgm, g_menu_bgm_len, 1);
 }
 
 void Select_Update(InputEvent ev)
